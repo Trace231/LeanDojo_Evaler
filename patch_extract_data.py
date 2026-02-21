@@ -2,12 +2,13 @@
 """
 patch_extract_data.py  —  LeanDojo ExtractData.lean 兼容性补丁
 =================================================================
-修复 lean_dojo_v2 的 ExtractData.lean 在新版 Lean 4 上的四个编译错误:
+修复 lean_dojo_v2 的 ExtractData.lean 在新版 Lean 4 上的五个编译错误:
   1. unknown constant 'Substring.Raw'       → 替换为 Substring
   2. unknown constant 'String.Pos.Raw'      → 替换为 String.Pos
   3. invalid field 'trimAscii'              → 替换为 .trim
   4. 'sorryAx' is not a structure           → 级联错误，修复 1-3 后消除；
                                                额外添加防御性 deriving 注释
+  5. redundant .toString after .trim/.drop  → 新版返回 String，移除冗余调用
 
 用法:
     python patch_extract_data.py [--target PATH] [--dry-run] [--no-cleanup]
@@ -61,7 +62,7 @@ def backup(path: Path) -> Path:
 
 
 def apply_patches(src: str) -> str:
-    """Apply all four patches and return the modified source."""
+    """Apply all five patches and return the modified source."""
     patched = src
     applied = []
 
@@ -133,6 +134,46 @@ def apply_patches(src: str) -> str:
         applied.append(
             "[Patch 4] No explicit sorryAx references found — "
             "cascading error will be resolved by Patches 1-3"
+        )
+
+    # ── Patch 5: 移除冗余的 .toString ──────────────────────────────────────
+    # 旧版 Lean 4 中, .trimAscii 和 .drop 返回 Substring, 需要 .toString
+    # 转回 String。新版中 .trim 和 .drop 直接返回 String, 再调 .toString
+    # 会触发 "invalid field 'toString'" 错误。
+    #
+    # 替换规则:
+    #   .trim.toString       → .trim
+    #   .drop N |>.toString  → .drop N
+    #   .drop N.toString     → .drop N      (无管道写法)
+    patch5_count = 0
+
+    # 5a: .trim.toString → .trim
+    n = patched.count(".trim.toString")
+    if n:
+        patched = patched.replace(".trim.toString", ".trim")
+        patch5_count += n
+
+    # 5b: .drop <N> |>.toString → .drop <N>  (管道写法, e.g. line 356)
+    drop_pipe_pat = re.compile(r'\.drop\s+(\d+)\s*\|>\.toString')
+    matches = drop_pipe_pat.findall(patched)
+    if matches:
+        patched = drop_pipe_pat.sub(r'.drop \1', patched)
+        patch5_count += len(matches)
+
+    # 5c: .drop <N>.toString → .drop <N>  (无管道写法)
+    drop_dot_pat = re.compile(r'\.drop\s+(\d+)\.toString')
+    matches = drop_dot_pat.findall(patched)
+    if matches:
+        patched = drop_dot_pat.sub(r'.drop \1', patched)
+        patch5_count += len(matches)
+
+    if patch5_count:
+        applied.append(
+            f"[Patch 5] Removed redundant .toString after .trim/.drop  ({patch5_count} occurrences)"
+        )
+    else:
+        applied.append(
+            "[Patch 5] No redundant .toString found — already clean"
         )
 
     return patched, applied
