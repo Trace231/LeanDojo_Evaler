@@ -1,0 +1,3016 @@
+{
+  "BoxIntegral.Box.withBotCoe_inj": [
+    {
+      "step": 0,
+      "tactic": "simp only [Subset.antisymm_iff, \u2190 le_antisymm_iff, withBotCoe_subset_iff]",
+      "step_logprob": -39.0625,
+      "cumulative_logprob": -39.0625
+    }
+  ],
+  "VectorBundleCore.localTriv_symm_apply": [
+    {
+      "step": 0,
+      "tactic": "apply (Z.localTriv i).symm_apply hb v",
+      "step_logprob": -45.90625,
+      "cumulative_logprob": -45.90625
+    }
+  ],
+  "lowerCentralSeries_succ_eq_bot": [
+    {
+      "step": 0,
+      "tactic": "rw [lowerCentralSeries_succ, closure_eq_bot_iff, Set.subset_singleton_iff]",
+      "step_logprob": -25.359375,
+      "cumulative_logprob": -25.359375
+    },
+    {
+      "step": 1,
+      "tactic": "rintro x \u27e8y, hy1, z, \u27e8\u27e9, rfl\u27e9",
+      "step_logprob": -26.109375,
+      "cumulative_logprob": -51.46875
+    },
+    {
+      "step": 2,
+      "tactic": "rw [mul_assoc, \u2190 mul_inv_rev, mul_inv_eq_one, eq_comm]",
+      "step_logprob": -39.53125,
+      "cumulative_logprob": -91.0
+    },
+    {
+      "step": 3,
+      "tactic": "exact mem_center_iff.mp (h hy1) z",
+      "step_logprob": -9.7109375,
+      "cumulative_logprob": -100.7109375
+    }
+  ],
+  "MeasureTheory.MeasurePreserving.aestronglyMeasurable_comp_iff": [
+    {
+      "step": 0,
+      "tactic": "rw [\u2190 hf.map_eq, h\u2082.aestronglyMeasurable_map_iff]",
+      "step_logprob": -6.9453125,
+      "cumulative_logprob": -6.9453125
+    }
+  ],
+  "MulChar.ofUnitHom_coe": [
+    {
+      "step": 0,
+      "tactic": "simp [ofUnitHom]",
+      "step_logprob": -0.87060546875,
+      "cumulative_logprob": -0.87060546875
+    }
+  ],
+  "Nat.not_dvd_ord_compl": [
+    {
+      "step": 0,
+      "tactic": "rw [Nat.Prime.dvd_iff_one_le_factorization hp (ord_compl_pos p hn).ne']",
+      "step_logprob": -68.1875,
+      "cumulative_logprob": -68.1875
+    },
+    {
+      "step": 1,
+      "tactic": "rw [Nat.factorization_div (Nat.ord_proj_dvd n p)]",
+      "step_logprob": -12.5,
+      "cumulative_logprob": -80.6875
+    },
+    {
+      "step": 2,
+      "tactic": "simp [hp.factorization]",
+      "step_logprob": -15.6171875,
+      "cumulative_logprob": -96.3046875
+    }
+  ],
+  "MeasureTheory.Measure.InnerRegular.measurableSet_of_open": [
+    {
+      "step": 0,
+      "tactic": "rintro s \u27e8hs, h\u03bcs\u27e9 r hr",
+      "step_logprob": -21.0625,
+      "cumulative_logprob": -21.0625
+    },
+    {
+      "step": 1,
+      "tactic": "obtain \u27e8\u03b5, h\u03b5, h\u03b5s, rfl\u27e9 : \u2203 (\u03b5 : _)(_ : \u03b5 \u2260 0), \u03b5 + \u03b5 \u2264 \u03bc s \u2227 r = \u03bc s - (\u03b5 + \u03b5) := by\n  use (\u03bc s - r) / 2\n  simp [*, hr.le, ENNReal.add_halves, ENNReal.sub_sub_cancel, le_add_right]",
+      "step_logprob": -132.25,
+      "cumulative_logprob": -153.3125
+    },
+    {
+      "step": 2,
+      "tactic": "rcases hs.exists_isOpen_diff_lt h\u03bcs h\u03b5 with \u27e8U, hsU, hUo, hUt, h\u03bcU\u27e9",
+      "step_logprob": -52.375,
+      "cumulative_logprob": -205.6875
+    },
+    {
+      "step": 3,
+      "tactic": "rcases (U \\ s).exists_isOpen_lt_of_lt _ h\u03bcU with \u27e8U', hsU', hU'o, h\u03bcU'\u27e9",
+      "step_logprob": -44.25,
+      "cumulative_logprob": -249.9375
+    },
+    {
+      "step": 4,
+      "tactic": "replace hsU' := diff_subset_comm.1 hsU'",
+      "step_logprob": -39.1875,
+      "cumulative_logprob": -289.125
+    },
+    {
+      "step": 5,
+      "tactic": "rcases H.exists_subset_lt_add h0 hUo hUt.ne h\u03b5 with \u27e8K, hKU, hKc, hKr\u27e9",
+      "step_logprob": -77.3125,
+      "cumulative_logprob": -366.4375
+    },
+    {
+      "step": 6,
+      "tactic": "refine' \u27e8K \\ U', fun x hx => hsU' \u27e8hKU hx.1, hx.2\u27e9, hd hKc hU'o, ENNReal.sub_lt_of_lt_add h\u03b5s _\u27e9",
+      "step_logprob": -67.4375,
+      "cumulative_logprob": -433.875
+    },
+    {
+      "step": 7,
+      "tactic": "calc\n  \u03bc s \u2264 \u03bc U := \u03bc.mono hsU\n  _ < \u03bc K + \u03b5 := hKr\n  _ \u2264 \u03bc (K \\ U') + \u03bc U' + \u03b5 := (add_le_add_right (tsub_le_iff_right.1 le_measure_diff) _)\n  _ \u2264 \u03bc (K \\ U') + \u03b5 + \u03b5 := by\n    apply add_le_add_right; apply add_le_add_left\n    exact h\u03bcU'.le\n  _ = \u03bc (K \\ U') + (\u03b5 + \u03b5) := add_assoc _ _ _",
+      "step_logprob": -132.75,
+      "cumulative_logprob": -566.625
+    },
+    {
+      "step": 8,
+      "tactic": "use (\u03bc s - r) / 2",
+      "step_logprob": -5.890625,
+      "cumulative_logprob": -572.515625
+    },
+    {
+      "step": 9,
+      "tactic": "simp [*, hr.le, ENNReal.add_halves, ENNReal.sub_sub_cancel, le_add_right]",
+      "step_logprob": -39.03125,
+      "cumulative_logprob": -611.546875
+    },
+    {
+      "step": 10,
+      "tactic": "apply add_le_add_right",
+      "step_logprob": -8.5859375,
+      "cumulative_logprob": -620.1328125
+    },
+    {
+      "step": 11,
+      "tactic": "apply add_le_add_left",
+      "step_logprob": -5.23828125,
+      "cumulative_logprob": -625.37109375
+    },
+    {
+      "step": 12,
+      "tactic": "exact h\u03bcU'.le",
+      "step_logprob": -11.1796875,
+      "cumulative_logprob": -636.55078125
+    }
+  ],
+  "MeasureTheory.meas_ge_le_lintegral_div": [
+    {
+      "step": 0,
+      "tactic": "rw [mul_comm]",
+      "step_logprob": -4.046875,
+      "cumulative_logprob": -4.046875
+    },
+    {
+      "step": 1,
+      "tactic": "exact mul_meas_ge_le_lintegral\u2080 hf \u03b5",
+      "step_logprob": -21.265625,
+      "cumulative_logprob": -25.3125
+    }
+  ],
+  "Complex.arg_cos_add_sin_mul_I_sub": [
+    {
+      "step": 0,
+      "tactic": "rw [\u2190 one_mul (_ + _), \u2190 ofReal_one, arg_mul_cos_add_sin_mul_I_sub zero_lt_one]",
+      "step_logprob": -87.25,
+      "cumulative_logprob": -87.25
+    }
+  ],
+  "wittStructureInt_prop": [
+    {
+      "step": 0,
+      "tactic": "apply MvPolynomial.map_injective (Int.castRingHom \u211a) Int.cast_injective",
+      "step_logprob": -14.5625,
+      "cumulative_logprob": -14.5625
+    },
+    {
+      "step": 1,
+      "tactic": "have := wittStructureRat_prop p (map (Int.castRingHom \u211a) \u03a6) n",
+      "step_logprob": -43.65625,
+      "cumulative_logprob": -58.21875
+    },
+    {
+      "step": 2,
+      "tactic": "simpa only [map_bind\u2081, \u2190 eval\u2082Hom_map_hom, eval\u2082Hom_C_left, map_rename, map_wittPolynomial,\n  AlgHom.coe_toRingHom, map_wittStructureInt]",
+      "step_logprob": -64.4375,
+      "cumulative_logprob": -122.65625
+    }
+  ],
+  "SimpleGraph.Preconnected.ofBoxProdRight": [
+    {
+      "step": 0,
+      "tactic": "classical\nrintro b\u2081 b\u2082\nobtain \u27e8w\u27e9 := h (Classical.arbitrary _, b\u2081) (Classical.arbitrary _, b\u2082)\nexact \u27e8w.ofBoxProdRight\u27e9",
+      "step_logprob": -106.8125,
+      "cumulative_logprob": -106.8125
+    },
+    {
+      "step": 1,
+      "tactic": "rintro b\u2081 b\u2082",
+      "step_logprob": -14.640625,
+      "cumulative_logprob": -121.453125
+    },
+    {
+      "step": 2,
+      "tactic": "obtain \u27e8w\u27e9 := h (Classical.arbitrary _, b\u2081) (Classical.arbitrary _, b\u2082)",
+      "step_logprob": -55.59375,
+      "cumulative_logprob": -177.046875
+    },
+    {
+      "step": 3,
+      "tactic": "exact \u27e8w.ofBoxProdRight\u27e9",
+      "step_logprob": -45.28125,
+      "cumulative_logprob": -222.328125
+    }
+  ],
+  "Function.invFunOn_pos": [
+    {
+      "step": 0,
+      "tactic": "rw [invFunOn, dif_pos h]",
+      "step_logprob": -16.90625,
+      "cumulative_logprob": -16.90625
+    },
+    {
+      "step": 1,
+      "tactic": "exact Classical.choose_spec h",
+      "step_logprob": -2.32421875,
+      "cumulative_logprob": -19.23046875
+    }
+  ],
+  "MeasureTheory.Measure.add_haar_eq_zero_of_disjoint_translates_aux": [
+    {
+      "step": 0,
+      "tactic": "by_contra h",
+      "step_logprob": -10.5078125,
+      "cumulative_logprob": -10.5078125
+    },
+    {
+      "step": 1,
+      "tactic": "apply lt_irrefl \u221e",
+      "step_logprob": -27.03125,
+      "cumulative_logprob": -37.5390625
+    },
+    {
+      "step": 2,
+      "tactic": "calc\n  \u221e = \u2211' _ : \u2115, \u03bc s := (ENNReal.tsum_const_eq_top_of_ne_zero h).symm\n  _ = \u2211' n : \u2115, \u03bc ({u n} + s) := by\n    congr 1; ext1 n; simp only [image_add_left, measure_preimage_add, singleton_add]\n  _ = \u03bc (\u22c3 n, {u n} + s) := Eq.symm <| measure_iUnion hs fun n => by\n    simpa only [image_add_left, singleton_add] using measurable_id.const_add _ h's\n  _ = \u03bc (range u + s) := by rw [\u2190 iUnion_add, iUnion_singleton_eq_range]\n  _ < \u221e := Bounded.measure_lt_top (hu.add sb)",
+      "step_logprob": -228.5,
+      "cumulative_logprob": -266.0390625
+    },
+    {
+      "step": 3,
+      "tactic": "congr 1",
+      "step_logprob": -8.6328125,
+      "cumulative_logprob": -274.671875
+    },
+    {
+      "step": 4,
+      "tactic": "ext1 n",
+      "step_logprob": -7.30078125,
+      "cumulative_logprob": -281.97265625
+    },
+    {
+      "step": 5,
+      "tactic": "simp only [image_add_left, measure_preimage_add, singleton_add]",
+      "step_logprob": -28.515625,
+      "cumulative_logprob": -310.48828125
+    },
+    {
+      "step": 6,
+      "tactic": "simpa only [image_add_left, singleton_add] using measurable_id.const_add _ h's",
+      "step_logprob": -39.78125,
+      "cumulative_logprob": -350.26953125
+    },
+    {
+      "step": 7,
+      "tactic": "rw [\u2190 iUnion_add, iUnion_singleton_eq_range]",
+      "step_logprob": -23.828125,
+      "cumulative_logprob": -374.09765625
+    }
+  ],
+  "IsQuasiSeparated.image_of_embedding": [
+    {
+      "step": 0,
+      "tactic": "intro U V hU hU' hU'' hV hV' hV''",
+      "step_logprob": -22.15625,
+      "cumulative_logprob": -22.15625
+    },
+    {
+      "step": 1,
+      "tactic": "convert\n  (H (f \u207b\u00b9' U) (f \u207b\u00b9' V)\n    ?_ (h.continuous.1 _ hU') ?_ ?_ (h.continuous.1 _ hV') ?_).image h.continuous",
+      "step_logprob": -79.5625,
+      "cumulative_logprob": -101.71875
+    },
+    {
+      "step": 2,
+      "tactic": "symm",
+      "step_logprob": -8.6328125,
+      "cumulative_logprob": -110.3515625
+    },
+    {
+      "step": 3,
+      "tactic": "rw [\u2190 Set.preimage_inter, Set.image_preimage_eq_inter_range, Set.inter_eq_left_iff_subset]",
+      "step_logprob": -26.6875,
+      "cumulative_logprob": -137.0390625
+    },
+    {
+      "step": 4,
+      "tactic": "exact (Set.inter_subset_left _ _).trans (hU.trans (Set.image_subset_range _ _))",
+      "step_logprob": -28.984375,
+      "cumulative_logprob": -166.0234375
+    },
+    {
+      "step": 5,
+      "tactic": "intro x hx",
+      "step_logprob": -1.7197265625,
+      "cumulative_logprob": -167.7431640625
+    },
+    {
+      "step": 6,
+      "tactic": "rw [\u2190 (h.inj.injOn _).mem_image_iff (Set.subset_univ _) trivial]",
+      "step_logprob": -75.9375,
+      "cumulative_logprob": -243.6806640625
+    },
+    {
+      "step": 7,
+      "tactic": "exact hU hx",
+      "step_logprob": -4.72265625,
+      "cumulative_logprob": -248.4033203125
+    },
+    {
+      "step": 8,
+      "tactic": "rw [h.isCompact_iff_isCompact_image]",
+      "step_logprob": -12.96875,
+      "cumulative_logprob": -261.3720703125
+    },
+    {
+      "step": 9,
+      "tactic": "convert hU''",
+      "step_logprob": -6.453125,
+      "cumulative_logprob": -267.8251953125
+    },
+    {
+      "step": 10,
+      "tactic": "rw [Set.image_preimage_eq_inter_range, Set.inter_eq_left_iff_subset]",
+      "step_logprob": -16.4375,
+      "cumulative_logprob": -284.2626953125
+    },
+    {
+      "step": 11,
+      "tactic": "exact hU.trans (Set.image_subset_range _ _)",
+      "step_logprob": -13.6171875,
+      "cumulative_logprob": -297.8798828125
+    },
+    {
+      "step": 12,
+      "tactic": "intro x hx",
+      "step_logprob": -1.7919921875,
+      "cumulative_logprob": -299.671875
+    },
+    {
+      "step": 13,
+      "tactic": "rw [\u2190 (h.inj.injOn _).mem_image_iff (Set.subset_univ _) trivial]",
+      "step_logprob": -72.3125,
+      "cumulative_logprob": -371.984375
+    },
+    {
+      "step": 14,
+      "tactic": "exact hV hx",
+      "step_logprob": -12.359375,
+      "cumulative_logprob": -384.34375
+    },
+    {
+      "step": 15,
+      "tactic": "rw [h.isCompact_iff_isCompact_image]",
+      "step_logprob": -13.6875,
+      "cumulative_logprob": -398.03125
+    },
+    {
+      "step": 16,
+      "tactic": "convert hV''",
+      "step_logprob": -4.953125,
+      "cumulative_logprob": -402.984375
+    },
+    {
+      "step": 17,
+      "tactic": "rw [Set.image_preimage_eq_inter_range, Set.inter_eq_left_iff_subset]",
+      "step_logprob": -16.6875,
+      "cumulative_logprob": -419.671875
+    },
+    {
+      "step": 18,
+      "tactic": "exact hV.trans (Set.image_subset_range _ _)",
+      "step_logprob": -19.671875,
+      "cumulative_logprob": -439.34375
+    }
+  ],
+  "Set.Iic.isCoatom_iff": [
+    {
+      "step": 0,
+      "tactic": "rw [\u2190 covby_top_iff]",
+      "step_logprob": -49.28125,
+      "cumulative_logprob": -49.28125
+    },
+    {
+      "step": 1,
+      "tactic": "refine' (Set.OrdConnected.apply_covby_apply_iff (OrderEmbedding.subtype fun c => c \u2264 b) _).symm",
+      "step_logprob": -78.0,
+      "cumulative_logprob": -127.28125
+    },
+    {
+      "step": 2,
+      "tactic": "simpa only [OrderEmbedding.subtype_apply, Subtype.range_coe_subtype] using Set.ordConnected_Iic",
+      "step_logprob": -24.765625,
+      "cumulative_logprob": -152.046875
+    }
+  ],
+  "gauge_lt_eq": [
+    {
+      "step": 0,
+      "tactic": "ext",
+      "step_logprob": -4.52734375,
+      "cumulative_logprob": -4.52734375
+    },
+    {
+      "step": 1,
+      "tactic": "simp_rw [mem_setOf, mem_iUnion, exists_prop, mem_Ioo, and_assoc]",
+      "step_logprob": -25.15625,
+      "cumulative_logprob": -29.68359375
+    },
+    {
+      "step": 2,
+      "tactic": "exact\n  \u27e8exists_lt_of_gauge_lt absorbs, fun \u27e8r, hr\u2080, hr\u2081, hx\u27e9 =>\n    (gauge_le_of_mem hr\u2080.le hx).trans_lt hr\u2081\u27e9",
+      "step_logprob": -63.09375,
+      "cumulative_logprob": -92.77734375
+    }
+  ],
+  "Filter.HasBasis.uniformEmbedding_iff'": [
+    {
+      "step": 0,
+      "tactic": "rw [uniformEmbedding_iff, and_comm, h.uniformInducing_iff h']",
+      "step_logprob": -18.171875,
+      "cumulative_logprob": -18.171875
+    }
+  ],
+  "compl_top": [
+    {
+      "step": 0,
+      "tactic": "rw [le_compl_iff_disjoint_right, disjoint_top, le_bot_iff]",
+      "step_logprob": -31.109375,
+      "cumulative_logprob": -31.109375
+    }
+  ],
+  "BinaryHeap.size_pos_of_max": [
+    {
+      "step": 0,
+      "tactic": "simp [BinaryHeap.max, Array.get?, h] at e",
+      "step_logprob": -10.125,
+      "cumulative_logprob": -10.125
+    }
+  ],
+  "isG\u03b4_iInter": [
+    {
+      "step": 0,
+      "tactic": "choose T hTo hTc hTs using hs",
+      "step_logprob": -46.0,
+      "cumulative_logprob": -46.0
+    },
+    {
+      "step": 1,
+      "tactic": "obtain rfl : s = fun i => \u22c2\u2080 T i := funext hTs",
+      "step_logprob": -26.15625,
+      "cumulative_logprob": -72.15625
+    },
+    {
+      "step": 2,
+      "tactic": "refine' \u27e8\u22c3 i, T i, _, countable_iUnion hTc, (sInter_iUnion _).symm\u27e9",
+      "step_logprob": -58.9375,
+      "cumulative_logprob": -131.09375
+    },
+    {
+      "step": 3,
+      "tactic": "simpa [@forall_swap \u03b9] using hTo",
+      "step_logprob": -33.15625,
+      "cumulative_logprob": -164.25
+    }
+  ],
+  "Matrix.map_zero": [
+    {
+      "step": 0,
+      "tactic": "ext",
+      "step_logprob": -5.41015625,
+      "cumulative_logprob": -5.41015625
+    },
+    {
+      "step": 1,
+      "tactic": "simp [h]",
+      "step_logprob": -1.796875,
+      "cumulative_logprob": -7.20703125
+    }
+  ],
+  "nhdsWithin_singleton": [
+    {
+      "step": 0,
+      "tactic": "rw [nhdsWithin, principal_singleton, inf_eq_right.2 (pure_le_nhds a)]",
+      "step_logprob": -14.6171875,
+      "cumulative_logprob": -14.6171875
+    }
+  ],
+  "Finsupp.prod_filter_mul_prod_filter_not": [
+    {
+      "step": 0,
+      "tactic": "classical simp_rw [prod_filter_index, support_filter, Finset.prod_filter_mul_prod_filter_not,\n  Finsupp.prod]",
+      "step_logprob": -56.78125,
+      "cumulative_logprob": -56.78125
+    },
+    {
+      "step": 1,
+      "tactic": "simp_rw [prod_filter_index, support_filter, Finset.prod_filter_mul_prod_filter_not,\nFinsupp.prod]",
+      "step_logprob": -52.5,
+      "cumulative_logprob": -109.28125
+    }
+  ],
+  "Nat.bitwise'_zero_right": [
+    {
+      "step": 0,
+      "tactic": "unfold bitwise'",
+      "step_logprob": -8.3046875,
+      "cumulative_logprob": -8.3046875
+    },
+    {
+      "step": 1,
+      "tactic": "apply bitCasesOn m",
+      "step_logprob": -16.359375,
+      "cumulative_logprob": -24.6640625
+    },
+    {
+      "step": 2,
+      "tactic": "intros",
+      "step_logprob": -3.396484375,
+      "cumulative_logprob": -28.060546875
+    },
+    {
+      "step": 3,
+      "tactic": "rw [binaryRec_eq, binaryRec_zero]",
+      "step_logprob": -20.5,
+      "cumulative_logprob": -48.560546875
+    },
+    {
+      "step": 4,
+      "tactic": "exact bitwise'_bit_aux h",
+      "step_logprob": -35.875,
+      "cumulative_logprob": -84.435546875
+    }
+  ],
+  "Nat.succ_sub_succ_eq_sub": [
+    {
+      "step": 0,
+      "tactic": "induction m with\n| zero      => exact rfl\n| succ m ih => apply congrArg pred ih",
+      "step_logprob": -53.90625,
+      "cumulative_logprob": -53.90625
+    },
+    {
+      "step": 1,
+      "tactic": "exact rfl",
+      "step_logprob": -11.2890625,
+      "cumulative_logprob": -65.1953125
+    },
+    {
+      "step": 2,
+      "tactic": "apply congrArg pred ih",
+      "step_logprob": -25.921875,
+      "cumulative_logprob": -91.1171875
+    }
+  ],
+  "Part.Fix.approx_mono'": [
+    {
+      "step": 0,
+      "tactic": "induction i with\n| zero => dsimp [approx]; apply @bot_le _ _ _ (f \u22a5)\n| succ _ i_ih => intro ; apply f.monotone; apply i_ih",
+      "step_logprob": -101.0625,
+      "cumulative_logprob": -101.0625
+    },
+    {
+      "step": 1,
+      "tactic": "dsimp [approx]",
+      "step_logprob": -6.78515625,
+      "cumulative_logprob": -107.84765625
+    },
+    {
+      "step": 2,
+      "tactic": "apply @bot_le _ _ _ (f \u22a5)",
+      "step_logprob": -23.984375,
+      "cumulative_logprob": -131.83203125
+    },
+    {
+      "step": 3,
+      "tactic": "intro",
+      "step_logprob": -2.404296875,
+      "cumulative_logprob": -134.236328125
+    },
+    {
+      "step": 4,
+      "tactic": "apply f.monotone",
+      "step_logprob": -14.140625,
+      "cumulative_logprob": -148.376953125
+    },
+    {
+      "step": 5,
+      "tactic": "apply i_ih",
+      "step_logprob": -1.5302734375,
+      "cumulative_logprob": -149.9072265625
+    }
+  ],
+  "Set.einfsep_lt_iff": [
+    {
+      "step": 0,
+      "tactic": "simp_rw [einfsep, iInf_lt_iff]",
+      "step_logprob": -8.5,
+      "cumulative_logprob": -8.5
+    }
+  ],
+  "Cardinal.powerlt_le": [
+    {
+      "step": 0,
+      "tactic": "rw [powerlt, ciSup_le_iff']",
+      "step_logprob": -33.03125,
+      "cumulative_logprob": -33.03125
+    },
+    {
+      "step": 1,
+      "tactic": "simp",
+      "step_logprob": -1.3134765625,
+      "cumulative_logprob": -34.3447265625
+    },
+    {
+      "step": 2,
+      "tactic": "rw [\u2190 image_eq_range]",
+      "step_logprob": -20.71875,
+      "cumulative_logprob": -55.0634765625
+    },
+    {
+      "step": 3,
+      "tactic": "exact bddAbove_image.{u, u} _ bddAbove_Iio",
+      "step_logprob": -15.9140625,
+      "cumulative_logprob": -70.9775390625
+    }
+  ],
+  "FirstOrder.Language.ElementarilyEquivalent.theory_model_iff": [
+    {
+      "step": 0,
+      "tactic": "rw [Theory.model_iff_subset_completeTheory, Theory.model_iff_subset_completeTheory,\n  h.completeTheory_eq]",
+      "step_logprob": -31.546875,
+      "cumulative_logprob": -31.546875
+    }
+  ],
+  "add_abs_nonneg": [
+    {
+      "step": 0,
+      "tactic": "rw [\u2190 add_right_neg a]",
+      "step_logprob": -17.515625,
+      "cumulative_logprob": -17.515625
+    },
+    {
+      "step": 1,
+      "tactic": "apply add_le_add_left",
+      "step_logprob": -7.56640625,
+      "cumulative_logprob": -25.08203125
+    },
+    {
+      "step": 2,
+      "tactic": "exact neg_le_abs_self a",
+      "step_logprob": -14.359375,
+      "cumulative_logprob": -39.44140625
+    }
+  ],
+  "CategoryTheory.Idempotents.idem_of_id_sub_idem": [
+    {
+      "step": 0,
+      "tactic": "simp only [comp_sub, sub_comp, id_comp, comp_id, hp, sub_self, sub_zero]",
+      "step_logprob": -15.2109375,
+      "cumulative_logprob": -15.2109375
+    }
+  ],
+  "Set.sep_ext_iff": [
+    {
+      "step": 0,
+      "tactic": "simp_rw [ext_iff, mem_sep_iff, and_congr_right_iff]",
+      "step_logprob": -29.421875,
+      "cumulative_logprob": -29.421875
+    }
+  ],
+  "PythagoreanTriple.isClassified_of_normalize_isPrimitiveClassified": [
+    {
+      "step": 0,
+      "tactic": "convert h.normalize.mul_isClassified (Int.gcd x y)\n      (isClassified_of_isPrimitiveClassified h.normalize hc) <;>\n  rw [Int.mul_ediv_cancel']",
+      "step_logprob": -127.875,
+      "cumulative_logprob": -127.875
+    },
+    {
+      "step": 1,
+      "tactic": "exact Int.gcd_dvd_left x y",
+      "step_logprob": -6.86328125,
+      "cumulative_logprob": -134.73828125
+    },
+    {
+      "step": 2,
+      "tactic": "exact Int.gcd_dvd_right x y",
+      "step_logprob": -6.35546875,
+      "cumulative_logprob": -141.09375
+    },
+    {
+      "step": 3,
+      "tactic": "exact h.gcd_dvd",
+      "step_logprob": -11.390625,
+      "cumulative_logprob": -152.484375
+    }
+  ],
+  "MeasureTheory.SimpleFunc.setToSimpleFunc_nonneg'": [
+    {
+      "step": 0,
+      "tactic": "refine' sum_nonneg fun i hi => _",
+      "step_logprob": -16.734375,
+      "cumulative_logprob": -16.734375
+    },
+    {
+      "step": 1,
+      "tactic": "by_cases h0 : i = 0",
+      "step_logprob": -18.078125,
+      "cumulative_logprob": -34.8125
+    },
+    {
+      "step": 2,
+      "tactic": "refine'\n  hT_nonneg _ (measurableSet_fiber _ _) (measure_preimage_lt_top_of_integrable _ hfi h0) i _",
+      "step_logprob": -26.453125,
+      "cumulative_logprob": -61.265625
+    },
+    {
+      "step": 3,
+      "tactic": "rw [mem_range] at hi",
+      "step_logprob": -10.359375,
+      "cumulative_logprob": -71.625
+    },
+    {
+      "step": 4,
+      "tactic": "obtain \u27e8y, hy\u27e9 := Set.mem_range.mp hi",
+      "step_logprob": -21.015625,
+      "cumulative_logprob": -92.640625
+    },
+    {
+      "step": 5,
+      "tactic": "rw [\u2190 hy]",
+      "step_logprob": -6.0234375,
+      "cumulative_logprob": -98.6640625
+    },
+    {
+      "step": 6,
+      "tactic": "convert hf y",
+      "step_logprob": -7.26953125,
+      "cumulative_logprob": -105.93359375
+    },
+    {
+      "step": 7,
+      "tactic": "simp [h0]",
+      "step_logprob": -5.9296875,
+      "cumulative_logprob": -111.86328125
+    }
+  ],
+  "CancelDenoms.cancel_factors_le": [
+    {
+      "step": 0,
+      "tactic": "rw [mul_le_mul_left, \u2190 ha, \u2190 hb, \u2190 mul_assoc, \u2190 mul_assoc, mul_comm bd, mul_le_mul_left]",
+      "step_logprob": -35.71875,
+      "cumulative_logprob": -35.71875
+    },
+    {
+      "step": 1,
+      "tactic": "exact mul_pos had hbd",
+      "step_logprob": -2.34765625,
+      "cumulative_logprob": -38.06640625
+    },
+    {
+      "step": 2,
+      "tactic": "exact one_div_pos.2 hgcd",
+      "step_logprob": -7.171875,
+      "cumulative_logprob": -45.23828125
+    }
+  ],
+  "Filter.principal_univ": [
+    {
+      "step": 0,
+      "tactic": "simp only [le_principal_iff, mem_top, eq_self_iff_true]",
+      "step_logprob": -23.59375,
+      "cumulative_logprob": -23.59375
+    }
+  ],
+  "continuousWithinAt_Icc_iff_Ici": [
+    {
+      "step": 0,
+      "tactic": "simp only [ContinuousWithinAt, nhdsWithin_Icc_eq_nhdsWithin_Ici h]",
+      "step_logprob": -9.0078125,
+      "cumulative_logprob": -9.0078125
+    }
+  ],
+  "MeasureTheory.SimpleFunc.range_comp_subset_range": [
+    {
+      "step": 0,
+      "tactic": "simp only [coe_range, coe_comp, Set.range_comp_subset_range]",
+      "step_logprob": -33.09375,
+      "cumulative_logprob": -33.09375
+    }
+  ],
+  "Set.preimage_const_add_Ioo": [
+    {
+      "step": 0,
+      "tactic": "simp [\u2190 Ioi_inter_Iio]",
+      "step_logprob": -15.1640625,
+      "cumulative_logprob": -15.1640625
+    }
+  ],
+  "Basis.toDual_toDual": [
+    {
+      "step": 0,
+      "tactic": "refine' b.ext fun i => b.dualBasis.ext fun j => _",
+      "step_logprob": -41.125,
+      "cumulative_logprob": -41.125
+    },
+    {
+      "step": 1,
+      "tactic": "rw [LinearMap.comp_apply, toDual_apply_left, coe_toDual_self, \u2190 coe_dualBasis,\n  Dual.eval_apply, Basis.repr_self, Finsupp.single_apply, dualBasis_apply_self]",
+      "step_logprob": -103.1875,
+      "cumulative_logprob": -144.3125
+    }
+  ],
+  "TopCat.pullbackIsoProdSubtype_hom_apply": [
+    {
+      "step": 0,
+      "tactic": "simpa using ConcreteCategory.congr_hom pullback.condition x",
+      "step_logprob": -11.5546875,
+      "cumulative_logprob": -11.5546875
+    },
+    {
+      "step": 1,
+      "tactic": "apply Subtype.ext",
+      "step_logprob": -4.67578125,
+      "cumulative_logprob": -16.23046875
+    },
+    {
+      "step": 2,
+      "tactic": "apply Prod.ext",
+      "step_logprob": -10.34375,
+      "cumulative_logprob": -26.57421875
+    },
+    {
+      "step": 3,
+      "tactic": "exacts [ConcreteCategory.congr_hom (pullbackIsoProdSubtype_hom_fst f g) x,\n  ConcreteCategory.congr_hom (pullbackIsoProdSubtype_hom_snd f g) x]",
+      "step_logprob": -23.734375,
+      "cumulative_logprob": -50.30859375
+    }
+  ],
+  "CategoryTheory.Functor.preservesEpimorphsisms_of_adjunction": [
+    {
+      "step": 0,
+      "tactic": "intro Z g h H",
+      "step_logprob": -8.515625,
+      "cumulative_logprob": -8.515625
+    },
+    {
+      "step": 1,
+      "tactic": "replace H := congr_arg (adj.homEquiv X Z) H",
+      "step_logprob": -22.4375,
+      "cumulative_logprob": -30.953125
+    },
+    {
+      "step": 2,
+      "tactic": "rwa [adj.homEquiv_naturality_left, adj.homEquiv_naturality_left, cancel_epi,\n  Equiv.apply_eq_iff_eq] at H",
+      "step_logprob": -36.0,
+      "cumulative_logprob": -66.953125
+    }
+  ],
+  "MeasureTheory.SimpleFunc.mem_image_of_mem_range_restrict": [
+    {
+      "step": 0,
+      "tactic": "simpa [mem_restrict_range hs, h0, -mem_range] using hr",
+      "step_logprob": -40.40625,
+      "cumulative_logprob": -40.40625
+    },
+    {
+      "step": 1,
+      "tactic": "rw [restrict_of_not_measurable hs] at hr",
+      "step_logprob": -37.78125,
+      "cumulative_logprob": -78.1875
+    },
+    {
+      "step": 2,
+      "tactic": "exact (h0 <| eq_zero_of_mem_range_zero hr).elim",
+      "step_logprob": -40.78125,
+      "cumulative_logprob": -118.96875
+    }
+  ],
+  "gcd_eq_of_dvd_sub_right": [
+    {
+      "step": 0,
+      "tactic": "apply dvd_antisymm_of_normalize_eq (normalize_gcd _ _) (normalize_gcd _ _) <;>\n  rw [dvd_gcd_iff] <;>\n  refine' \u27e8gcd_dvd_left _ _, _\u27e9",
+      "step_logprob": -33.875,
+      "cumulative_logprob": -33.875
+    },
+    {
+      "step": 1,
+      "tactic": "rcases h with \u27e8d, hd\u27e9",
+      "step_logprob": -8.7890625,
+      "cumulative_logprob": -42.6640625
+    },
+    {
+      "step": 2,
+      "tactic": "rcases gcd_dvd_right a b with \u27e8e, he\u27e9",
+      "step_logprob": -23.09375,
+      "cumulative_logprob": -65.7578125
+    },
+    {
+      "step": 3,
+      "tactic": "rcases gcd_dvd_left a b with \u27e8f, hf\u27e9",
+      "step_logprob": -20.125,
+      "cumulative_logprob": -85.8828125
+    },
+    {
+      "step": 4,
+      "tactic": "use e - f * d",
+      "step_logprob": -8.9375,
+      "cumulative_logprob": -94.8203125
+    },
+    {
+      "step": 5,
+      "tactic": "rw [mul_sub, \u2190 he, \u2190 mul_assoc, \u2190 hf, \u2190 hd, sub_sub_cancel]",
+      "step_logprob": -33.65625,
+      "cumulative_logprob": -128.4765625
+    },
+    {
+      "step": 6,
+      "tactic": "rcases h with \u27e8d, hd\u27e9",
+      "step_logprob": -8.828125,
+      "cumulative_logprob": -137.3046875
+    },
+    {
+      "step": 7,
+      "tactic": "rcases gcd_dvd_right a c with \u27e8e, he\u27e9",
+      "step_logprob": -25.078125,
+      "cumulative_logprob": -162.3828125
+    },
+    {
+      "step": 8,
+      "tactic": "rcases gcd_dvd_left a c with \u27e8f, hf\u27e9",
+      "step_logprob": -18.515625,
+      "cumulative_logprob": -180.8984375
+    },
+    {
+      "step": 9,
+      "tactic": "use e + f * d",
+      "step_logprob": -10.1796875,
+      "cumulative_logprob": -191.078125
+    },
+    {
+      "step": 10,
+      "tactic": "rw [mul_add, \u2190 he, \u2190 mul_assoc, \u2190 hf, \u2190 hd, \u2190 add_sub_assoc, add_comm c b, add_sub_cancel]",
+      "step_logprob": -55.3125,
+      "cumulative_logprob": -246.390625
+    }
+  ],
+  "IsPrimitiveRoot.geom_sum_eq_zero": [
+    {
+      "step": 0,
+      "tactic": "refine' eq_zero_of_ne_zero_of_mul_left_eq_zero (sub_ne_zero_of_ne (h\u03b6.ne_one hk).symm) _",
+      "step_logprob": -40.90625,
+      "cumulative_logprob": -40.90625
+    },
+    {
+      "step": 1,
+      "tactic": "rw [mul_neg_geom_sum, h\u03b6.pow_eq_one, sub_self]",
+      "step_logprob": -45.3125,
+      "cumulative_logprob": -86.21875
+    }
+  ],
+  "LinearMap.eq_adjoint_iff": [
+    {
+      "step": 0,
+      "tactic": "refine' \u27e8fun h x y => by rw [h, adjoint_inner_left], fun h => _\u27e9",
+      "step_logprob": -17.578125,
+      "cumulative_logprob": -17.578125
+    },
+    {
+      "step": 1,
+      "tactic": "ext x",
+      "step_logprob": -2.18359375,
+      "cumulative_logprob": -19.76171875
+    },
+    {
+      "step": 2,
+      "tactic": "exact ext_inner_right \ud835\udd5c fun y => by simp only [adjoint_inner_left, h x y]",
+      "step_logprob": -29.9375,
+      "cumulative_logprob": -49.69921875
+    },
+    {
+      "step": 3,
+      "tactic": "rw [h, adjoint_inner_left]",
+      "step_logprob": -9.1171875,
+      "cumulative_logprob": -58.81640625
+    },
+    {
+      "step": 4,
+      "tactic": "simp only [adjoint_inner_left, h x y]",
+      "step_logprob": -14.0390625,
+      "cumulative_logprob": -72.85546875
+    }
+  ],
+  "Convex.linear_preimage": [
+    {
+      "step": 0,
+      "tactic": "intro x hx y hy a b ha hb hab",
+      "step_logprob": -5.02734375,
+      "cumulative_logprob": -5.02734375
+    },
+    {
+      "step": 1,
+      "tactic": "rw [mem_preimage, f.map_add, f.map_smul, f.map_smul]",
+      "step_logprob": -5.6640625,
+      "cumulative_logprob": -10.69140625
+    },
+    {
+      "step": 2,
+      "tactic": "exact hs hx hy ha hb hab",
+      "step_logprob": -6.43359375,
+      "cumulative_logprob": -17.125
+    }
+  ],
+  "Polynomial.eval\u2082_bit0": [
+    {
+      "step": 0,
+      "tactic": "rw [bit0, eval\u2082_add, bit0]",
+      "step_logprob": -12.34375,
+      "cumulative_logprob": -12.34375
+    }
+  ],
+  "Pell.eq_of_xn_modEq_le": [
+    {
+      "step": 0,
+      "tactic": "simp_all",
+      "step_logprob": -0.88720703125,
+      "cumulative_logprob": -0.88720703125
+    },
+    {
+      "step": 1,
+      "tactic": "refine' _root_.ne_of_gt _ h",
+      "step_logprob": -38.8125,
+      "cumulative_logprob": -39.69970703125
+    },
+    {
+      "step": 2,
+      "tactic": "rw [jn, Nat.mod_self]",
+      "step_logprob": -13.2890625,
+      "cumulative_logprob": -52.98876953125
+    },
+    {
+      "step": 3,
+      "tactic": "have x0 : 0 < xn a1 0 % xn a1 n := by\n  rw [Nat.mod_eq_of_lt (strictMono_x a1 (Nat.pos_of_ne_zero npos))]\n  exact Nat.succ_pos _",
+      "step_logprob": -75.625,
+      "cumulative_logprob": -128.61376953125
+    },
+    {
+      "step": 4,
+      "tactic": "cases' i with i",
+      "step_logprob": -6.421875,
+      "cumulative_logprob": -135.03564453125
+    },
+    {
+      "step": 5,
+      "tactic": "exact x0",
+      "step_logprob": -3.50390625,
+      "cumulative_logprob": -138.53955078125
+    },
+    {
+      "step": 6,
+      "tactic": "rw [jn] at ij'",
+      "step_logprob": -8.90625,
+      "cumulative_logprob": -147.44580078125
+    },
+    {
+      "step": 7,
+      "tactic": "exact\n  x0.trans\n    (eq_of_xn_modEq_lem3 _ (Nat.pos_of_ne_zero npos) (Nat.succ_pos _) (le_trans ij j2n)\n      (_root_.ne_of_lt ij') fun \u27e8_, n1, _, i2\u27e9 => by\n      rw [n1, i2] at ij'; exact absurd ij' (by decide))",
+      "step_logprob": -215.5,
+      "cumulative_logprob": -362.94580078125
+    },
+    {
+      "step": 8,
+      "tactic": "rw [Nat.mod_eq_of_lt (strictMono_x a1 (Nat.pos_of_ne_zero npos))]",
+      "step_logprob": -46.0625,
+      "cumulative_logprob": -409.00830078125
+    },
+    {
+      "step": 9,
+      "tactic": "exact Nat.succ_pos _",
+      "step_logprob": -12.6015625,
+      "cumulative_logprob": -421.60986328125
+    },
+    {
+      "step": 10,
+      "tactic": "rw [n1, i2] at ij'",
+      "step_logprob": -17.765625,
+      "cumulative_logprob": -439.37548828125
+    },
+    {
+      "step": 11,
+      "tactic": "exact absurd ij' (by decide)",
+      "step_logprob": -10.2109375,
+      "cumulative_logprob": -449.58642578125
+    },
+    {
+      "step": 12,
+      "tactic": "decide",
+      "step_logprob": -7.625,
+      "cumulative_logprob": -457.21142578125
+    }
+  ],
+  "ZNum.cast_add": [
+    {
+      "step": 0,
+      "tactic": "cases a <;> exact (_root_.zero_add _).symm",
+      "step_logprob": -37.53125,
+      "cumulative_logprob": -37.53125
+    },
+    {
+      "step": 1,
+      "tactic": "cases b <;> exact (_root_.add_zero _).symm",
+      "step_logprob": -35.03125,
+      "cumulative_logprob": -72.5625
+    },
+    {
+      "step": 2,
+      "tactic": "simpa only [sub_eq_add_neg] using PosNum.cast_sub' (\u03b1 := \u03b1) _ _",
+      "step_logprob": -47.65625,
+      "cumulative_logprob": -120.21875
+    },
+    {
+      "step": 3,
+      "tactic": "rw [\u2190 PosNum.cast_to_int a, \u2190 PosNum.cast_to_int b, \u2190 Int.cast_neg, \u2190 Int.cast_add (-a)]",
+      "step_logprob": -44.75,
+      "cumulative_logprob": -164.96875
+    },
+    {
+      "step": 4,
+      "tactic": "simp [add_comm]",
+      "step_logprob": -2.412109375,
+      "cumulative_logprob": -167.380859375
+    },
+    {
+      "step": 5,
+      "tactic": "rw [PosNum.cast_add, neg_eq_iff_eq_neg, neg_add_rev, neg_neg, neg_neg,\n    \u2190 PosNum.cast_to_int a, \u2190 PosNum.cast_to_int b, \u2190 Int.cast_add, \u2190 Int.cast_add, add_comm]",
+      "step_logprob": -81.9375,
+      "cumulative_logprob": -249.318359375
+    }
+  ],
+  "Nat.Linear.Poly.denote_eq_cancel": [
+    {
+      "step": 0,
+      "tactic": "simp",
+      "step_logprob": -1.275390625,
+      "cumulative_logprob": -1.275390625
+    },
+    {
+      "step": 1,
+      "tactic": "apply denote_eq_cancelAux",
+      "step_logprob": -22.28125,
+      "cumulative_logprob": -23.556640625
+    },
+    {
+      "step": 2,
+      "tactic": "simp [h]",
+      "step_logprob": -3.416015625,
+      "cumulative_logprob": -26.97265625
+    }
+  ],
+  "EuclideanGeometry.angle_sub_const": [
+    {
+      "step": 0,
+      "tactic": "simpa only [vsub_eq_sub] using angle_vsub_const v\u2081 v\u2082 v\u2083 v",
+      "step_logprob": -60.6875,
+      "cumulative_logprob": -60.6875
+    }
+  ],
+  "UniformSpace.metrizable_uniformity": [
+    {
+      "step": 0,
+      "tactic": "obtain \u27e8U, hU_symm, hU_comp, hB\u27e9 :\n  \u2203 U : \u2115 \u2192 Set (X \u00d7 X),\n    (\u2200 n, SymmetricRel (U n)) \u2227\n      (\u2200 \u2983m n\u2984, m < n \u2192 U n \u25cb (U n \u25cb U n) \u2286 U m) \u2227 (\ud835\udce4 X).HasAntitoneBasis U := by\n  rcases UniformSpace.has_seq_basis X with \u27e8V, hB, hV_symm\u27e9\n  rcases hB.subbasis_with_rel fun m =>\n      hB.tendsto_smallSets.eventually\n        (eventually_uniformity_iterate_comp_subset (hB.mem m) 2) with\n    \u27e8\u03c6, -, h\u03c6_comp, h\u03c6B\u27e9\n  exact \u27e8V \u2218 \u03c6, fun n => hV_symm _, h\u03c6_comp, h\u03c6B\u27e9",
+      "step_logprob": -256.0,
+      "cumulative_logprob": -256.0
+    },
+    {
+      "step": 1,
+      "tactic": "letI := UniformSpace.separationSetoid X",
+      "step_logprob": -22.015625,
+      "cumulative_logprob": -278.015625
+    },
+    {
+      "step": 2,
+      "tactic": "set d : X \u2192 X \u2192 \u211d\u22650 := fun x y => if h : \u2203 n, (x, y) \u2209 U n then (1 / 2) ^ Nat.find h else 0",
+      "step_logprob": -98.9375,
+      "cumulative_logprob": -376.953125
+    },
+    {
+      "step": 3,
+      "tactic": "have hd_symm : \u2200 x y, d x y = d y x := by\n  intro x y\n  simp only [@SymmetricRel.mk_mem_comm _ _ (hU_symm _) x y]",
+      "step_logprob": -70.5625,
+      "cumulative_logprob": -447.515625
+    },
+    {
+      "step": 4,
+      "tactic": "have hr : (1 / 2 : \u211d\u22650) \u2208 Ioo (0 : \u211d\u22650) 1 := \u27e8half_pos one_pos, NNReal.half_lt_self one_ne_zero\u27e9",
+      "step_logprob": -81.0625,
+      "cumulative_logprob": -528.578125
+    },
+    {
+      "step": 5,
+      "tactic": "letI I := PseudoMetricSpace.ofPreNNDist d (fun x => hd\u2080.2 (Setoid.refl _)) hd_symm",
+      "step_logprob": -62.34375,
+      "cumulative_logprob": -590.921875
+    },
+    {
+      "step": 6,
+      "tactic": "have hdist_le : \u2200 x y, dist x y \u2264 d x y := PseudoMetricSpace.dist_ofPreNNDist_le _ _ _",
+      "step_logprob": -81.0625,
+      "cumulative_logprob": -671.984375
+    },
+    {
+      "step": 7,
+      "tactic": "refine' \u27e8I, uniformSpace_eq <| (uniformity_basis_dist_pow hr.1 hr.2).ext hB.toHasBasis _ _\u27e9",
+      "step_logprob": -77.875,
+      "cumulative_logprob": -749.859375
+    },
+    {
+      "step": 8,
+      "tactic": "rcases UniformSpace.has_seq_basis X with \u27e8V, hB, hV_symm\u27e9",
+      "step_logprob": -48.21875,
+      "cumulative_logprob": -798.078125
+    },
+    {
+      "step": 9,
+      "tactic": "rcases hB.subbasis_with_rel fun m =>\n    hB.tendsto_smallSets.eventually\n      (eventually_uniformity_iterate_comp_subset (hB.mem m) 2) with\n  \u27e8\u03c6, -, h\u03c6_comp, h\u03c6B\u27e9",
+      "step_logprob": -136.5,
+      "cumulative_logprob": -934.578125
+    },
+    {
+      "step": 10,
+      "tactic": "exact \u27e8V \u2218 \u03c6, fun n => hV_symm _, h\u03c6_comp, h\u03c6B\u27e9",
+      "step_logprob": -9.015625,
+      "cumulative_logprob": -943.59375
+    },
+    {
+      "step": 11,
+      "tactic": "intro x y",
+      "step_logprob": -2.396484375,
+      "cumulative_logprob": -945.990234375
+    },
+    {
+      "step": 12,
+      "tactic": "refine' Iff.trans _ hB.mem_separationRel.symm",
+      "step_logprob": -49.9375,
+      "cumulative_logprob": -995.927734375
+    },
+    {
+      "step": 13,
+      "tactic": "simp only [true_imp_iff]",
+      "step_logprob": -21.1875,
+      "cumulative_logprob": -1017.115234375
+    },
+    {
+      "step": 14,
+      "tactic": "split_ifs with h",
+      "step_logprob": -2.056640625,
+      "cumulative_logprob": -1019.171875
+    },
+    {
+      "step": 15,
+      "tactic": "rw [\u2190 not_forall] at h",
+      "step_logprob": -32.78125,
+      "cumulative_logprob": -1051.953125
+    },
+    {
+      "step": 16,
+      "tactic": "simp [h, pow_eq_zero_iff']",
+      "step_logprob": -21.140625,
+      "cumulative_logprob": -1073.09375
+    },
+    {
+      "step": 17,
+      "tactic": "simpa only [not_exists, Classical.not_not, eq_self_iff_true, true_iff_iff] using h",
+      "step_logprob": -32.84375,
+      "cumulative_logprob": -1105.9375
+    },
+    {
+      "step": 18,
+      "tactic": "intro x y",
+      "step_logprob": -2.15234375,
+      "cumulative_logprob": -1108.08984375
+    },
+    {
+      "step": 19,
+      "tactic": "simp only [@SymmetricRel.mk_mem_comm _ _ (hU_symm _) x y]",
+      "step_logprob": -49.375,
+      "cumulative_logprob": -1157.46484375
+    },
+    {
+      "step": 20,
+      "tactic": "intro x y n",
+      "step_logprob": -2.25,
+      "cumulative_logprob": -1159.71484375
+    },
+    {
+      "step": 21,
+      "tactic": "dsimp only []",
+      "step_logprob": -19.21875,
+      "cumulative_logprob": -1178.93359375
+    },
+    {
+      "step": 22,
+      "tactic": "split_ifs with h",
+      "step_logprob": -4.44140625,
+      "cumulative_logprob": -1183.375
+    },
+    {
+      "step": 23,
+      "tactic": "rw [(strictAnti_pow hr.1 hr.2).le_iff_le, Nat.find_le_iff]",
+      "step_logprob": -38.625,
+      "cumulative_logprob": -1222.0
+    },
+    {
+      "step": 24,
+      "tactic": "exact \u27e8fun \u27e8m, hmn, hm\u27e9 hn => hm (hB.antitone hmn hn), fun h => \u27e8n, le_rfl, h\u27e9\u27e9",
+      "step_logprob": -25.484375,
+      "cumulative_logprob": -1247.484375
+    },
+    {
+      "step": 25,
+      "tactic": "push_neg  at h",
+      "step_logprob": -25.078125,
+      "cumulative_logprob": -1272.5625
+    },
+    {
+      "step": 26,
+      "tactic": "simp only [h, not_true, (pow_pos hr.1 _).not_le]",
+      "step_logprob": -49.46875,
+      "cumulative_logprob": -1322.03125
+    },
+    {
+      "step": 27,
+      "tactic": "refine' PseudoMetricSpace.le_two_mul_dist_ofPreNNDist _ _ _ fun x\u2081 x\u2082 x\u2083 x\u2084 => _",
+      "step_logprob": -71.4375,
+      "cumulative_logprob": -1393.46875
+    },
+    {
+      "step": 28,
+      "tactic": "by_cases H : \u2203 n, (x\u2081, x\u2084) \u2209 U n",
+      "step_logprob": -22.5,
+      "cumulative_logprob": -1415.96875
+    },
+    {
+      "step": 29,
+      "tactic": "refine' (dif_pos H).trans_le _",
+      "step_logprob": -24.375,
+      "cumulative_logprob": -1440.34375
+    },
+    {
+      "step": 30,
+      "tactic": "rw [\u2190 NNReal.div_le_iff' two_ne_zero, \u2190 mul_one_div (_ ^ _), \u2190 pow_succ']",
+      "step_logprob": -90.625,
+      "cumulative_logprob": -1530.96875
+    },
+    {
+      "step": 31,
+      "tactic": "simp only [le_max_iff, hle_d, \u2190 not_and_or]",
+      "step_logprob": -25.546875,
+      "cumulative_logprob": -1556.515625
+    },
+    {
+      "step": 32,
+      "tactic": "rintro \u27e8h\u2081\u2082, h\u2082\u2083, h\u2083\u2084\u27e9",
+      "step_logprob": -11.234375,
+      "cumulative_logprob": -1567.75
+    },
+    {
+      "step": 33,
+      "tactic": "refine' Nat.find_spec H (hU_comp (lt_add_one <| Nat.find H) _)",
+      "step_logprob": -39.34375,
+      "cumulative_logprob": -1607.09375
+    },
+    {
+      "step": 34,
+      "tactic": "exact \u27e8x\u2082, h\u2081\u2082, x\u2083, h\u2082\u2083, h\u2083\u2084\u27e9",
+      "step_logprob": -3.0078125,
+      "cumulative_logprob": -1610.1015625
+    },
+    {
+      "step": 35,
+      "tactic": "exact (dif_neg H).trans_le (zero_le _)",
+      "step_logprob": -44.125,
+      "cumulative_logprob": -1654.2265625
+    },
+    {
+      "step": 36,
+      "tactic": "refine' fun n hn => \u27e8n, hn, fun x hx => (hdist_le _ _).trans_lt _\u27e9",
+      "step_logprob": -46.53125,
+      "cumulative_logprob": -1700.7578125
+    },
+    {
+      "step": 37,
+      "tactic": "change _ < (toReal _) ^ _",
+      "step_logprob": -37.96875,
+      "cumulative_logprob": -1738.7265625
+    },
+    {
+      "step": 38,
+      "tactic": "rwa [\u2190 NNReal.coe_pow, NNReal.coe_lt_coe, \u2190 not_le, hle_d, Classical.not_not, Prod.mk.eta]",
+      "step_logprob": -48.375,
+      "cumulative_logprob": -1787.1015625
+    },
+    {
+      "step": 39,
+      "tactic": "refine' fun n _ => \u27e8n + 1, trivial, fun x hx => _\u27e9",
+      "step_logprob": -36.65625,
+      "cumulative_logprob": -1823.7578125
+    },
+    {
+      "step": 40,
+      "tactic": "rw [mem_setOf_eq] at hx",
+      "step_logprob": -7.390625,
+      "cumulative_logprob": -1831.1484375
+    },
+    {
+      "step": 41,
+      "tactic": "contrapose! hx",
+      "step_logprob": -8.53125,
+      "cumulative_logprob": -1839.6796875
+    },
+    {
+      "step": 42,
+      "tactic": "refine' le_trans _ ((div_le_iff' (zero_lt_two' \u211d)).2 (hd_le x.1 x.2))",
+      "step_logprob": -52.40625,
+      "cumulative_logprob": -1892.0859375
+    },
+    {
+      "step": 43,
+      "tactic": "change (toReal _) ^ _ \u2264 _",
+      "step_logprob": -47.53125,
+      "cumulative_logprob": -1939.6171875
+    },
+    {
+      "step": 44,
+      "tactic": "rwa [\u2190 NNReal.coe_two, \u2190 NNReal.coe_div, \u2190 NNReal.coe_pow, NNReal.coe_le_coe, pow_succ',\n  mul_one_div, NNReal.div_le_iff two_ne_zero, div_mul_cancel _ (two_ne_zero' \u211d\u22650), hle_d,\n  Prod.mk.eta]",
+      "step_logprob": -127.1875,
+      "cumulative_logprob": -2066.8046875
+    }
+  ],
+  "UniformInducing.comp": [
+    {
+      "step": 0,
+      "tactic": "rw [\u2190 hf.1, \u2190 hg.1, comap_comap]",
+      "step_logprob": -18.5625,
+      "cumulative_logprob": -18.5625
+    },
+    {
+      "step": 1,
+      "tactic": "rfl",
+      "step_logprob": -2.333984375,
+      "cumulative_logprob": -20.896484375
+    }
+  ],
+  "Matrix.invOf_eq_nonsing_inv": [
+    {
+      "step": 0,
+      "tactic": "letI := detInvertibleOfInvertible A",
+      "step_logprob": -34.5,
+      "cumulative_logprob": -34.5
+    },
+    {
+      "step": 1,
+      "tactic": "rw [inv_def, Ring.inverse_invertible, invOf_eq]",
+      "step_logprob": -55.6875,
+      "cumulative_logprob": -90.1875
+    }
+  ],
+  "List.isRotated_next_eq": [
+    {
+      "step": 0,
+      "tactic": "obtain \u27e8k, hk, rfl\u27e9 := nthLe_of_mem hx",
+      "step_logprob": -22.46875,
+      "cumulative_logprob": -22.46875
+    },
+    {
+      "step": 1,
+      "tactic": "obtain \u27e8n, rfl\u27e9 := id h",
+      "step_logprob": -28.078125,
+      "cumulative_logprob": -50.546875
+    },
+    {
+      "step": 2,
+      "tactic": "rw [next_nthLe _ hn]",
+      "step_logprob": -26.921875,
+      "cumulative_logprob": -77.46875
+    },
+    {
+      "step": 3,
+      "tactic": "simp_rw [\u2190 nthLe_rotate' _ n k]",
+      "step_logprob": -45.34375,
+      "cumulative_logprob": -122.8125
+    },
+    {
+      "step": 4,
+      "tactic": "rw [next_nthLe _ (h.nodup_iff.mp hn), \u2190 nthLe_rotate' _ n]",
+      "step_logprob": -59.8125,
+      "cumulative_logprob": -182.625
+    },
+    {
+      "step": 5,
+      "tactic": "simp [add_assoc]",
+      "step_logprob": -17.734375,
+      "cumulative_logprob": -200.359375
+    }
+  ],
+  "Fin.coe_cast": [
+    {
+      "step": 0,
+      "tactic": "simp",
+      "step_logprob": -0.45703125,
+      "cumulative_logprob": -0.45703125
+    }
+  ],
+  "Finset.card_div_choose_le_card_shadow_div_choose": [
+    {
+      "step": 0,
+      "tactic": "obtain hr' | hr' := lt_or_le (Fintype.card \u03b1) r",
+      "step_logprob": -26.265625,
+      "cumulative_logprob": -26.265625
+    },
+    {
+      "step": 1,
+      "tactic": "replace h\ud835\udc9c := card_mul_le_card_shadow_mul h\ud835\udc9c",
+      "step_logprob": -68.8125,
+      "cumulative_logprob": -95.078125
+    },
+    {
+      "step": 2,
+      "tactic": "rw [div_le_div_iff] <;> norm_cast",
+      "step_logprob": -6.828125,
+      "cumulative_logprob": -101.90625
+    },
+    {
+      "step": 3,
+      "tactic": "rw [choose_eq_zero_of_lt hr', cast_zero, div_zero]",
+      "step_logprob": -35.625,
+      "cumulative_logprob": -137.53125
+    },
+    {
+      "step": 4,
+      "tactic": "exact div_nonneg (cast_nonneg _) (cast_nonneg _)",
+      "step_logprob": -17.3125,
+      "cumulative_logprob": -154.84375
+    },
+    {
+      "step": 5,
+      "tactic": "cases' r with r",
+      "step_logprob": -7.2890625,
+      "cumulative_logprob": -162.1328125
+    },
+    {
+      "step": 6,
+      "tactic": "rw [Nat.succ_eq_add_one] at *",
+      "step_logprob": -10.078125,
+      "cumulative_logprob": -172.2109375
+    },
+    {
+      "step": 7,
+      "tactic": "rw [tsub_add_eq_add_tsub hr', add_tsub_add_eq_tsub_right] at h\ud835\udc9c",
+      "step_logprob": -28.578125,
+      "cumulative_logprob": -200.7890625
+    },
+    {
+      "step": 8,
+      "tactic": "apply le_of_mul_le_mul_right _ (pos_iff_ne_zero.2 hr)",
+      "step_logprob": -37.6875,
+      "cumulative_logprob": -238.4765625
+    },
+    {
+      "step": 9,
+      "tactic": "convert Nat.mul_le_mul_right ((Fintype.card \u03b1).choose r) h\ud835\udc9c using 1",
+      "step_logprob": -27.5625,
+      "cumulative_logprob": -266.0390625
+    },
+    {
+      "step": 10,
+      "tactic": "exact (hr rfl).elim",
+      "step_logprob": -22.984375,
+      "cumulative_logprob": -289.0234375
+    },
+    {
+      "step": 11,
+      "tactic": "simp [mul_assoc, Nat.choose_succ_right_eq]",
+      "step_logprob": -16.015625,
+      "cumulative_logprob": -305.0390625
+    },
+    {
+      "step": 12,
+      "tactic": "exact Or.inl (mul_comm _ _)",
+      "step_logprob": -12.2109375,
+      "cumulative_logprob": -317.25
+    },
+    {
+      "step": 13,
+      "tactic": "simp only [mul_assoc, choose_succ_right_eq, mul_eq_mul_left_iff]",
+      "step_logprob": -39.1875,
+      "cumulative_logprob": -356.4375
+    },
+    {
+      "step": 14,
+      "tactic": "exact Or.inl (mul_comm _ _)",
+      "step_logprob": -13.03125,
+      "cumulative_logprob": -369.46875
+    },
+    {
+      "step": 15,
+      "tactic": "exact Nat.choose_pos hr'",
+      "step_logprob": -9.1875,
+      "cumulative_logprob": -378.65625
+    },
+    {
+      "step": 16,
+      "tactic": "exact Nat.choose_pos (r.pred_le.trans hr')",
+      "step_logprob": -32.375,
+      "cumulative_logprob": -411.03125
+    }
+  ],
+  "Set.union_distrib_iInter\u2082_left": [
+    {
+      "step": 0,
+      "tactic": "simp_rw [union_distrib_iInter_left]",
+      "step_logprob": -26.90625,
+      "cumulative_logprob": -26.90625
+    }
+  ],
+  "IsCompactOperator.image_subset_compact_of_bounded": [
+    {
+      "step": 0,
+      "tactic": "rwa [NormedSpace.isVonNBounded_iff, \u2190 Metric.bounded_iff_isBounded]",
+      "step_logprob": -37.0,
+      "cumulative_logprob": -37.0
+    }
+  ],
+  "Prod.swap_iSup": [
+    {
+      "step": 0,
+      "tactic": "simp_rw [iSup, swap_sSup, \u2190range_comp, Function.comp]",
+      "step_logprob": -21.953125,
+      "cumulative_logprob": -21.953125
+    }
+  ],
+  "lowerSemicontinuousWithinAt_tsum": [
+    {
+      "step": 0,
+      "tactic": "simp_rw [ENNReal.tsum_eq_iSup_sum]",
+      "step_logprob": -16.84375,
+      "cumulative_logprob": -16.84375
+    },
+    {
+      "step": 1,
+      "tactic": "refine lowerSemicontinuousWithinAt_iSup fun b => ?_",
+      "step_logprob": -26.421875,
+      "cumulative_logprob": -43.265625
+    },
+    {
+      "step": 2,
+      "tactic": "exact lowerSemicontinuousWithinAt_sum fun i _hi => h i",
+      "step_logprob": -20.21875,
+      "cumulative_logprob": -63.484375
+    }
+  ],
+  "HasFDerivAt.iterate": [
+    {
+      "step": 0,
+      "tactic": "refine' HasFDerivAtFilter.iterate hf _ hx n",
+      "step_logprob": -34.5,
+      "cumulative_logprob": -34.5
+    },
+    {
+      "step": 1,
+      "tactic": "have := hf.continuousAt",
+      "step_logprob": -11.7109375,
+      "cumulative_logprob": -46.2109375
+    },
+    {
+      "step": 2,
+      "tactic": "unfold ContinuousAt at this",
+      "step_logprob": -18.828125,
+      "cumulative_logprob": -65.0390625
+    },
+    {
+      "step": 3,
+      "tactic": "convert this",
+      "step_logprob": -5.03515625,
+      "cumulative_logprob": -70.07421875
+    },
+    {
+      "step": 4,
+      "tactic": "exact hx.symm",
+      "step_logprob": -2.58984375,
+      "cumulative_logprob": -72.6640625
+    }
+  ],
+  "MeasureTheory.set_integral_dirac": [
+    {
+      "step": 0,
+      "tactic": "rw [restrict_dirac]",
+      "step_logprob": -13.5,
+      "cumulative_logprob": -13.5
+    },
+    {
+      "step": 1,
+      "tactic": "split_ifs",
+      "step_logprob": -2.92578125,
+      "cumulative_logprob": -16.42578125
+    },
+    {
+      "step": 2,
+      "tactic": "exact integral_dirac _ _",
+      "step_logprob": -18.125,
+      "cumulative_logprob": -34.55078125
+    },
+    {
+      "step": 3,
+      "tactic": "exact integral_zero_measure _",
+      "step_logprob": -20.015625,
+      "cumulative_logprob": -54.56640625
+    }
+  ],
+  "SimpleGraph.Subgraph.deleteVerts_inter_verts_left_eq": [
+    {
+      "step": 0,
+      "tactic": "ext <;> simp (config := { contextual := true }) [imp_false]",
+      "step_logprob": -17.359375,
+      "cumulative_logprob": -17.359375
+    }
+  ],
+  "TrivSqZeroExt.snd_exp": [
+    {
+      "step": 0,
+      "tactic": "rw [exp_def, snd_add, snd_inl, snd_inr, zero_add]",
+      "step_logprob": -38.9375,
+      "cumulative_logprob": -38.9375
+    }
+  ],
+  "Nat.testBit_bitwise'": [
+    {
+      "step": 0,
+      "tactic": "revert m n",
+      "step_logprob": -8.765625,
+      "cumulative_logprob": -8.765625
+    },
+    {
+      "step": 1,
+      "tactic": "induction' k with k IH <;>\nintros m n <;>\napply bitCasesOn m <;> intros a m' <;>\napply bitCasesOn n <;> intros b n' <;>\nrw [bitwise'_bit h]",
+      "step_logprob": -81.5,
+      "cumulative_logprob": -90.265625
+    },
+    {
+      "step": 2,
+      "tactic": "simp [testBit_zero]",
+      "step_logprob": -9.4765625,
+      "cumulative_logprob": -99.7421875
+    },
+    {
+      "step": 3,
+      "tactic": "simp [testBit_succ, IH]",
+      "step_logprob": -9.421875,
+      "cumulative_logprob": -109.1640625
+    }
+  ],
+  "Bool.xor_not_left": [
+    {
+      "step": 0,
+      "tactic": "decide",
+      "step_logprob": -4.3125,
+      "cumulative_logprob": -4.3125
+    }
+  ],
+  "exists_continuous_forall_mem_convex_of_local": [
+    {
+      "step": 0,
+      "tactic": "choose U hU g hgc hgt using H",
+      "step_logprob": -16.03125,
+      "cumulative_logprob": -16.03125
+    },
+    {
+      "step": 1,
+      "tactic": "obtain \u27e8f, hf\u27e9 := PartitionOfUnity.exists_isSubordinate isClosed_univ (fun x => interior (U x))\n  (fun x => isOpen_interior) fun x _ => mem_iUnion.2 \u27e8x, mem_interior_iff_mem_nhds.2 (hU x)\u27e9",
+      "step_logprob": -63.1875,
+      "cumulative_logprob": -79.21875
+    },
+    {
+      "step": 2,
+      "tactic": "refine' \u27e8\u27e8fun x => \u2211\u1da0 i, f i x \u2022 g i x,\n  hf.continuous_finsum_smul (fun i => isOpen_interior) fun i => (hgc i).mono interior_subset\u27e9,\n  fun x => f.finsum_smul_mem_convex (mem_univ x) (fun i hi => hgt _ _ _) (ht _)\u27e9",
+      "step_logprob": -146.25,
+      "cumulative_logprob": -225.46875
+    },
+    {
+      "step": 3,
+      "tactic": "exact interior_subset (hf _ <| subset_closure hi)",
+      "step_logprob": -33.96875,
+      "cumulative_logprob": -259.4375
+    }
+  ],
+  "MonoidHom.independent_range_of_coprime_order": [
+    {
+      "step": 0,
+      "tactic": "cases nonempty_fintype \u03b9",
+      "step_logprob": -9.625,
+      "cumulative_logprob": -9.625
+    },
+    {
+      "step": 1,
+      "tactic": "rintro i",
+      "step_logprob": -8.390625,
+      "cumulative_logprob": -18.015625
+    },
+    {
+      "step": 2,
+      "tactic": "rw [disjoint_iff_inf_le]",
+      "step_logprob": -4.15625,
+      "cumulative_logprob": -22.171875
+    },
+    {
+      "step": 3,
+      "tactic": "rintro f \u27e8hxi, hxp\u27e9",
+      "step_logprob": -34.125,
+      "cumulative_logprob": -56.296875
+    },
+    {
+      "step": 4,
+      "tactic": "dsimp at hxi hxp",
+      "step_logprob": -11.5546875,
+      "cumulative_logprob": -67.8515625
+    },
+    {
+      "step": 5,
+      "tactic": "rw [iSup_subtype', \u2190 noncommPiCoprod_range] at hxp",
+      "step_logprob": -50.5,
+      "cumulative_logprob": -118.3515625
+    },
+    {
+      "step": 6,
+      "tactic": "rotate_left",
+      "step_logprob": -11.59375,
+      "cumulative_logprob": -129.9453125
+    },
+    {
+      "step": 7,
+      "tactic": "cases' hxp with g hgf",
+      "step_logprob": -23.21875,
+      "cumulative_logprob": -153.1640625
+    },
+    {
+      "step": 8,
+      "tactic": "cases' hxi with g' hg'f",
+      "step_logprob": -28.65625,
+      "cumulative_logprob": -181.8203125
+    },
+    {
+      "step": 9,
+      "tactic": "have hxi : orderOf f \u2223 Fintype.card (H i) := by\n  rw [\u2190 hg'f]\n  exact (orderOf_map_dvd _ _).trans orderOf_dvd_card_univ",
+      "step_logprob": -94.1875,
+      "cumulative_logprob": -276.0078125
+    },
+    {
+      "step": 10,
+      "tactic": "have hxp : orderOf f \u2223 \u220f j : { j // j \u2260 i }, Fintype.card (H j) := by\n  rw [\u2190 hgf, \u2190 Fintype.card_pi]\n  exact (orderOf_map_dvd _ _).trans orderOf_dvd_card_univ",
+      "step_logprob": -158.5,
+      "cumulative_logprob": -434.5078125
+    },
+    {
+      "step": 11,
+      "tactic": "change f = 1",
+      "step_logprob": -10.6796875,
+      "cumulative_logprob": -445.1875
+    },
+    {
+      "step": 12,
+      "tactic": "rw [\u2190 pow_one f, \u2190 orderOf_dvd_iff_pow_eq_one]",
+      "step_logprob": -18.984375,
+      "cumulative_logprob": -464.171875
+    },
+    {
+      "step": 13,
+      "tactic": "obtain \u27e8c, hc\u27e9 := Nat.dvd_gcd hxp hxi",
+      "step_logprob": -24.296875,
+      "cumulative_logprob": -488.46875
+    },
+    {
+      "step": 14,
+      "tactic": "use c",
+      "step_logprob": -8.4453125,
+      "cumulative_logprob": -496.9140625
+    },
+    {
+      "step": 15,
+      "tactic": "rw [\u2190 hc]",
+      "step_logprob": -5.02734375,
+      "cumulative_logprob": -501.94140625
+    },
+    {
+      "step": 16,
+      "tactic": "symm",
+      "step_logprob": -12.703125,
+      "cumulative_logprob": -514.64453125
+    },
+    {
+      "step": 17,
+      "tactic": "rw [\u2190 Nat.coprime_iff_gcd_eq_one]",
+      "step_logprob": -9.1796875,
+      "cumulative_logprob": -523.82421875
+    },
+    {
+      "step": 18,
+      "tactic": "apply Nat.coprime_prod_left",
+      "step_logprob": -13.4296875,
+      "cumulative_logprob": -537.25390625
+    },
+    {
+      "step": 19,
+      "tactic": "intro j _",
+      "step_logprob": -8.25,
+      "cumulative_logprob": -545.50390625
+    },
+    {
+      "step": 20,
+      "tactic": "apply hcoprime",
+      "step_logprob": -6.31640625,
+      "cumulative_logprob": -551.8203125
+    },
+    {
+      "step": 21,
+      "tactic": "exact j.2",
+      "step_logprob": -9.2890625,
+      "cumulative_logprob": -561.109375
+    },
+    {
+      "step": 22,
+      "tactic": "intro _ _ hj",
+      "step_logprob": -14.8203125,
+      "cumulative_logprob": -575.9296875
+    },
+    {
+      "step": 23,
+      "tactic": "apply hcomm",
+      "step_logprob": -3.880859375,
+      "cumulative_logprob": -579.810546875
+    },
+    {
+      "step": 24,
+      "tactic": "exact hj \u2218 Subtype.ext",
+      "step_logprob": -11.890625,
+      "cumulative_logprob": -591.701171875
+    },
+    {
+      "step": 25,
+      "tactic": "rw [\u2190 hg'f]",
+      "step_logprob": -4.421875,
+      "cumulative_logprob": -596.123046875
+    },
+    {
+      "step": 26,
+      "tactic": "exact (orderOf_map_dvd _ _).trans orderOf_dvd_card_univ",
+      "step_logprob": -76.1875,
+      "cumulative_logprob": -672.310546875
+    },
+    {
+      "step": 27,
+      "tactic": "rw [\u2190 hgf, \u2190 Fintype.card_pi]",
+      "step_logprob": -27.875,
+      "cumulative_logprob": -700.185546875
+    },
+    {
+      "step": 28,
+      "tactic": "exact (orderOf_map_dvd _ _).trans orderOf_dvd_card_univ",
+      "step_logprob": -67.875,
+      "cumulative_logprob": -768.060546875
+    }
+  ],
+  "Relation.reflTransGen_iff_eq_or_transGen": [
+    {
+      "step": 0,
+      "tactic": "refine' \u27e8fun h \u21a6 _, fun h \u21a6 _\u27e9",
+      "step_logprob": -9.1875,
+      "cumulative_logprob": -9.1875
+    },
+    {
+      "step": 1,
+      "tactic": "cases' h with c _ hac hcb",
+      "step_logprob": -21.390625,
+      "cumulative_logprob": -30.578125
+    },
+    {
+      "step": 2,
+      "tactic": "exact Or.inl rfl",
+      "step_logprob": -2.875,
+      "cumulative_logprob": -33.453125
+    },
+    {
+      "step": 3,
+      "tactic": "exact Or.inr (TransGen.tail' hac hcb)",
+      "step_logprob": -21.78125,
+      "cumulative_logprob": -55.234375
+    },
+    {
+      "step": 4,
+      "tactic": "rcases h with (rfl | h)",
+      "step_logprob": -4.7734375,
+      "cumulative_logprob": -60.0078125
+    },
+    {
+      "step": 5,
+      "tactic": "rfl",
+      "step_logprob": -7.5234375,
+      "cumulative_logprob": -67.53125
+    },
+    {
+      "step": 6,
+      "tactic": "exact h.to_reflTransGen",
+      "step_logprob": -9.25,
+      "cumulative_logprob": -76.78125
+    }
+  ],
+  "Real.volume_Iio": [
+    {
+      "step": 0,
+      "tactic": "simp",
+      "step_logprob": -0.9169921875,
+      "cumulative_logprob": -0.9169921875
+    }
+  ],
+  "Submodule.le_pow_toAddSubmonoid": [
+    {
+      "step": 0,
+      "tactic": "obtain rfl | hn := Decidable.eq_or_ne n 0",
+      "step_logprob": -28.609375,
+      "cumulative_logprob": -28.609375
+    },
+    {
+      "step": 1,
+      "tactic": "rw [pow_zero, pow_zero]",
+      "step_logprob": -5.75,
+      "cumulative_logprob": -34.359375
+    },
+    {
+      "step": 2,
+      "tactic": "exact le_one_toAddSubmonoid",
+      "step_logprob": -23.65625,
+      "cumulative_logprob": -58.015625
+    },
+    {
+      "step": 3,
+      "tactic": "exact (pow_toAddSubmonoid M hn).ge",
+      "step_logprob": -37.40625,
+      "cumulative_logprob": -95.421875
+    }
+  ],
+  "MeasureTheory.SignedMeasure.totalVariation_absolutelyContinuous_iff": [
+    {
+      "step": 0,
+      "tactic": "constructor <;> intro h",
+      "step_logprob": -3.005859375,
+      "cumulative_logprob": -3.005859375
+    },
+    {
+      "step": 1,
+      "tactic": "constructor",
+      "step_logprob": -2.181640625,
+      "cumulative_logprob": -5.1875
+    },
+    {
+      "step": 2,
+      "tactic": "all_goals\n  refine' Measure.AbsolutelyContinuous.mk fun S _ hS\u2082 => _\n  have := h hS\u2082\n  rw [totalVariation, Measure.add_apply, add_eq_zero_iff] at this",
+      "step_logprob": -72.4375,
+      "cumulative_logprob": -77.625
+    },
+    {
+      "step": 3,
+      "tactic": "exacts [this.1, this.2]",
+      "step_logprob": -12.53125,
+      "cumulative_logprob": -90.15625
+    },
+    {
+      "step": 4,
+      "tactic": "refine' Measure.AbsolutelyContinuous.mk fun S _ hS\u2082 => _",
+      "step_logprob": -30.640625,
+      "cumulative_logprob": -120.796875
+    },
+    {
+      "step": 5,
+      "tactic": "have := h hS\u2082",
+      "step_logprob": -9.25,
+      "cumulative_logprob": -130.046875
+    },
+    {
+      "step": 6,
+      "tactic": "rw [totalVariation, Measure.add_apply, add_eq_zero_iff] at this",
+      "step_logprob": -33.1875,
+      "cumulative_logprob": -163.234375
+    },
+    {
+      "step": 7,
+      "tactic": "refine' Measure.AbsolutelyContinuous.mk fun S _ hS\u2082 => _",
+      "step_logprob": -30.296875,
+      "cumulative_logprob": -193.53125
+    },
+    {
+      "step": 8,
+      "tactic": "rw [totalVariation, Measure.add_apply, h.1 hS\u2082, h.2 hS\u2082, add_zero]",
+      "step_logprob": -27.171875,
+      "cumulative_logprob": -220.703125
+    }
+  ],
+  "WithTop.distrib'": [
+    {
+      "step": 0,
+      "tactic": "induction' c using WithTop.recTopCoe with c",
+      "step_logprob": -11.8359375,
+      "cumulative_logprob": -11.8359375
+    },
+    {
+      "step": 1,
+      "tactic": "by_cases ha : a = 0 <;> simp [ha]",
+      "step_logprob": -16.984375,
+      "cumulative_logprob": -28.8203125
+    },
+    {
+      "step": 2,
+      "tactic": "by_cases hc : c = 0",
+      "step_logprob": -12.5,
+      "cumulative_logprob": -41.3203125
+    },
+    {
+      "step": 3,
+      "tactic": "simp [mul_coe hc]",
+      "step_logprob": -28.171875,
+      "cumulative_logprob": -69.4921875
+    },
+    {
+      "step": 4,
+      "tactic": "cases a <;> cases b",
+      "step_logprob": -4.03515625,
+      "cumulative_logprob": -73.52734375
+    },
+    {
+      "step": 5,
+      "tactic": "repeat' first | rfl |exact congr_arg some (add_mul _ _ _)",
+      "step_logprob": -49.125,
+      "cumulative_logprob": -122.65234375
+    },
+    {
+      "step": 6,
+      "tactic": "simp [hc]",
+      "step_logprob": -2.046875,
+      "cumulative_logprob": -124.69921875
+    },
+    {
+      "step": 7,
+      "tactic": "first | rfl |exact congr_arg some (add_mul _ _ _)",
+      "step_logprob": -43.8125,
+      "cumulative_logprob": -168.51171875
+    },
+    {
+      "step": 8,
+      "tactic": "rfl",
+      "step_logprob": -3.681640625,
+      "cumulative_logprob": -172.193359375
+    },
+    {
+      "step": 9,
+      "tactic": "exact congr_arg some (add_mul _ _ _)",
+      "step_logprob": -18.453125,
+      "cumulative_logprob": -190.646484375
+    }
+  ],
+  "Set.image2_eq_seq": [
+    {
+      "step": 0,
+      "tactic": "ext",
+      "step_logprob": -2.833984375,
+      "cumulative_logprob": -2.833984375
+    },
+    {
+      "step": 1,
+      "tactic": "simp",
+      "step_logprob": -0.73583984375,
+      "cumulative_logprob": -3.56982421875
+    }
+  ],
+  "Zsqrtd.norm_eq_of_associated": [
+    {
+      "step": 0,
+      "tactic": "obtain \u27e8u, rfl\u27e9 := h",
+      "step_logprob": -7.49609375,
+      "cumulative_logprob": -7.49609375
+    },
+    {
+      "step": 1,
+      "tactic": "rw [norm_mul, (norm_eq_one_iff' hd _).mpr u.isUnit, mul_one]",
+      "step_logprob": -72.0,
+      "cumulative_logprob": -79.49609375
+    }
+  ],
+  "LinearOrder.toPartialOrder_injective": [
+    {
+      "step": 0,
+      "tactic": "cases h",
+      "step_logprob": -6.140625,
+      "cumulative_logprob": -6.140625
+    },
+    {
+      "step": 1,
+      "tactic": "obtain rfl : A_decidableLE = B_decidableLE := Subsingleton.elim _ _",
+      "step_logprob": -32.65625,
+      "cumulative_logprob": -38.796875
+    },
+    {
+      "step": 2,
+      "tactic": "obtain rfl : A_decidableEq = B_decidableEq := Subsingleton.elim _ _",
+      "step_logprob": -33.03125,
+      "cumulative_logprob": -71.828125
+    },
+    {
+      "step": 3,
+      "tactic": "obtain rfl : A_decidableLT = B_decidableLT := Subsingleton.elim _ _",
+      "step_logprob": -30.953125,
+      "cumulative_logprob": -102.78125
+    },
+    {
+      "step": 4,
+      "tactic": "have : A_min = B_min := by\n  funext a b\n  exact (A_min_def _ _).trans (B_min_def _ _).symm",
+      "step_logprob": -34.34375,
+      "cumulative_logprob": -137.125
+    },
+    {
+      "step": 5,
+      "tactic": "cases this",
+      "step_logprob": -9.65625,
+      "cumulative_logprob": -146.78125
+    },
+    {
+      "step": 6,
+      "tactic": "have : A_max = B_max := by\n  funext a b\n  exact (A_max_def _ _).trans (B_max_def _ _).symm",
+      "step_logprob": -39.46875,
+      "cumulative_logprob": -186.25
+    },
+    {
+      "step": 7,
+      "tactic": "cases this",
+      "step_logprob": -9.2265625,
+      "cumulative_logprob": -195.4765625
+    },
+    {
+      "step": 8,
+      "tactic": "have : A_compare = B_compare := by\n  funext a b\n  exact (A_compare_canonical _ _).trans (B_compare_canonical _ _).symm",
+      "step_logprob": -29.34375,
+      "cumulative_logprob": -224.8203125
+    },
+    {
+      "step": 9,
+      "tactic": "congr",
+      "step_logprob": -6.36328125,
+      "cumulative_logprob": -231.18359375
+    },
+    {
+      "step": 10,
+      "tactic": "funext a b",
+      "step_logprob": -5.34375,
+      "cumulative_logprob": -236.52734375
+    },
+    {
+      "step": 11,
+      "tactic": "exact (A_min_def _ _).trans (B_min_def _ _).symm",
+      "step_logprob": -21.265625,
+      "cumulative_logprob": -257.79296875
+    },
+    {
+      "step": 12,
+      "tactic": "funext a b",
+      "step_logprob": -6.1796875,
+      "cumulative_logprob": -263.97265625
+    },
+    {
+      "step": 13,
+      "tactic": "exact (A_max_def _ _).trans (B_max_def _ _).symm",
+      "step_logprob": -24.640625,
+      "cumulative_logprob": -288.61328125
+    },
+    {
+      "step": 14,
+      "tactic": "funext a b",
+      "step_logprob": -4.9140625,
+      "cumulative_logprob": -293.52734375
+    },
+    {
+      "step": 15,
+      "tactic": "exact (A_compare_canonical _ _).trans (B_compare_canonical _ _).symm",
+      "step_logprob": -18.015625,
+      "cumulative_logprob": -311.54296875
+    }
+  ],
+  "CategoryTheory.Limits.IsTerminal.strict_hom_ext": [
+    {
+      "step": 0,
+      "tactic": "haveI := hI.isIso_from f",
+      "step_logprob": -32.21875,
+      "cumulative_logprob": -32.21875
+    },
+    {
+      "step": 1,
+      "tactic": "haveI := hI.isIso_from g",
+      "step_logprob": -31.40625,
+      "cumulative_logprob": -63.625
+    },
+    {
+      "step": 2,
+      "tactic": "exact eq_of_inv_eq_inv (hI.hom_ext (inv f) (inv g))",
+      "step_logprob": -30.265625,
+      "cumulative_logprob": -93.890625
+    }
+  ],
+  "Stream'.cons_injective2": [
+    {
+      "step": 0,
+      "tactic": "rw [\u2190 nth_zero_cons x s, h, nth_zero_cons]",
+      "step_logprob": -43.0625,
+      "cumulative_logprob": -43.0625
+    },
+    {
+      "step": 1,
+      "tactic": "rw [\u2190 nth_succ_cons n _ x, h, nth_succ_cons]",
+      "step_logprob": -46.625,
+      "cumulative_logprob": -89.6875
+    }
+  ],
+  "CauSeq.sub_equiv_sub": [
+    {
+      "step": 0,
+      "tactic": "simpa only [sub_eq_add_neg] using add_equiv_add hf (neg_equiv_neg hg)",
+      "step_logprob": -17.4375,
+      "cumulative_logprob": -17.4375
+    }
+  ],
+  "Set.surj_on_of_inj_on_of_ncard_le": [
+    {
+      "step": 0,
+      "tactic": "intro b hb",
+      "step_logprob": -1.8212890625,
+      "cumulative_logprob": -1.8212890625
+    },
+    {
+      "step": 1,
+      "tactic": "set f' : s \u2192 t := fun x \u21a6 \u27e8f x.1 x.2, hf _ _\u27e9",
+      "step_logprob": -33.90625,
+      "cumulative_logprob": -35.7275390625
+    },
+    {
+      "step": 2,
+      "tactic": "have finj : f'.Injective := by\n  rintro \u27e8x, hx\u27e9 \u27e8y, hy\u27e9 hxy\n  simp only [Subtype.mk.injEq] at hxy \u22a2\n  apply hinj _ _ hx hy hxy",
+      "step_logprob": -56.8125,
+      "cumulative_logprob": -92.5400390625
+    },
+    {
+      "step": 3,
+      "tactic": "have hft := ht.fintype",
+      "step_logprob": -33.15625,
+      "cumulative_logprob": -125.6962890625
+    },
+    {
+      "step": 4,
+      "tactic": "have hft' := Fintype.ofInjective f' finj",
+      "step_logprob": -32.34375,
+      "cumulative_logprob": -158.0400390625
+    },
+    {
+      "step": 5,
+      "tactic": "simp_rw [ncard_eq_toFinset_card] at hst",
+      "step_logprob": -29.9375,
+      "cumulative_logprob": -187.9775390625
+    },
+    {
+      "step": 6,
+      "tactic": "set f'' : \u2200 a, a \u2208 s.toFinset \u2192 \u03b2 := fun a h \u21a6 f a (by simpa using h)",
+      "step_logprob": -47.625,
+      "cumulative_logprob": -235.6025390625
+    },
+    {
+      "step": 7,
+      "tactic": "convert @Finset.surj_on_of_inj_on_of_card_le _ _ _ t.toFinset f'' _ _ _ (by simpa) (by simpa)",
+      "step_logprob": -62.875,
+      "cumulative_logprob": -298.4775390625
+    },
+    {
+      "step": 8,
+      "tactic": "rwa [\u2190ncard_eq_toFinset_card', \u2190ncard_eq_toFinset_card']",
+      "step_logprob": -23.140625,
+      "cumulative_logprob": -321.6181640625
+    },
+    {
+      "step": 9,
+      "tactic": "rintro \u27e8x, hx\u27e9 \u27e8y, hy\u27e9 hxy",
+      "step_logprob": -11.015625,
+      "cumulative_logprob": -332.6337890625
+    },
+    {
+      "step": 10,
+      "tactic": "simp only [Subtype.mk.injEq] at hxy \u22a2",
+      "step_logprob": -11.2890625,
+      "cumulative_logprob": -343.9228515625
+    },
+    {
+      "step": 11,
+      "tactic": "apply hinj _ _ hx hy hxy",
+      "step_logprob": -16.25,
+      "cumulative_logprob": -360.1728515625
+    },
+    {
+      "step": 12,
+      "tactic": "simpa using h",
+      "step_logprob": -3.921875,
+      "cumulative_logprob": -364.0947265625
+    },
+    {
+      "step": 13,
+      "tactic": "simpa",
+      "step_logprob": -5.3671875,
+      "cumulative_logprob": -369.4619140625
+    },
+    {
+      "step": 14,
+      "tactic": "simpa",
+      "step_logprob": -4.734375,
+      "cumulative_logprob": -374.1962890625
+    },
+    {
+      "step": 15,
+      "tactic": "simp",
+      "step_logprob": -0.344970703125,
+      "cumulative_logprob": -374.541259765625
+    },
+    {
+      "step": 16,
+      "tactic": "simp [hf]",
+      "step_logprob": -7.6796875,
+      "cumulative_logprob": -382.220947265625
+    },
+    {
+      "step": 17,
+      "tactic": "intros a\u2081 a\u2082 ha\u2081 ha\u2082 h",
+      "step_logprob": -3.6796875,
+      "cumulative_logprob": -385.900634765625
+    },
+    {
+      "step": 18,
+      "tactic": "rw [mem_toFinset] at ha\u2081 ha\u2082",
+      "step_logprob": -12.3515625,
+      "cumulative_logprob": -398.252197265625
+    },
+    {
+      "step": 19,
+      "tactic": "exact hinj _ _ ha\u2081 ha\u2082 h",
+      "step_logprob": -10.0,
+      "cumulative_logprob": -408.252197265625
+    }
+  ],
+  "nilpotent_iff_finite_descending_central_series": [
+    {
+      "step": 0,
+      "tactic": "rw [nilpotent_iff_finite_ascending_central_series]",
+      "step_logprob": -24.0,
+      "cumulative_logprob": -24.0
+    },
+    {
+      "step": 1,
+      "tactic": "constructor",
+      "step_logprob": -3.23046875,
+      "cumulative_logprob": -27.23046875
+    },
+    {
+      "step": 2,
+      "tactic": "rintro \u27e8n, H, hH, hn\u27e9",
+      "step_logprob": -10.1484375,
+      "cumulative_logprob": -37.37890625
+    },
+    {
+      "step": 3,
+      "tactic": "refine \u27e8n, fun m => H (n - m), is_decending_rev_series_of_is_ascending G hn hH, ?_\u27e9",
+      "step_logprob": -84.0625,
+      "cumulative_logprob": -121.44140625
+    },
+    {
+      "step": 4,
+      "tactic": "dsimp only",
+      "step_logprob": -11.1953125,
+      "cumulative_logprob": -132.63671875
+    },
+    {
+      "step": 5,
+      "tactic": "rw [tsub_self]",
+      "step_logprob": -3.890625,
+      "cumulative_logprob": -136.52734375
+    },
+    {
+      "step": 6,
+      "tactic": "exact hH.1",
+      "step_logprob": -10.296875,
+      "cumulative_logprob": -146.82421875
+    },
+    {
+      "step": 7,
+      "tactic": "rintro \u27e8n, H, hH, hn\u27e9",
+      "step_logprob": -9.3359375,
+      "cumulative_logprob": -156.16015625
+    },
+    {
+      "step": 8,
+      "tactic": "refine \u27e8n, fun m => H (n - m), is_ascending_rev_series_of_is_descending G hn hH, ?_\u27e9",
+      "step_logprob": -81.25,
+      "cumulative_logprob": -237.41015625
+    },
+    {
+      "step": 9,
+      "tactic": "dsimp only",
+      "step_logprob": -11.125,
+      "cumulative_logprob": -248.53515625
+    },
+    {
+      "step": 10,
+      "tactic": "rw [tsub_self]",
+      "step_logprob": -3.677734375,
+      "cumulative_logprob": -252.212890625
+    },
+    {
+      "step": 11,
+      "tactic": "exact hH.1",
+      "step_logprob": -12.109375,
+      "cumulative_logprob": -264.322265625
+    }
+  ],
+  "combo_mem_ball_of_ne": [
+    {
+      "step": 0,
+      "tactic": "rcases eq_or_ne r 0 with (rfl | hr)",
+      "step_logprob": -11.109375,
+      "cumulative_logprob": -11.109375
+    },
+    {
+      "step": 1,
+      "tactic": "rw [closedBall_zero, mem_singleton_iff] at hx hy",
+      "step_logprob": -18.0625,
+      "cumulative_logprob": -29.171875
+    },
+    {
+      "step": 2,
+      "tactic": "exact (hne (hx.trans hy.symm)).elim",
+      "step_logprob": -31.734375,
+      "cumulative_logprob": -60.90625
+    },
+    {
+      "step": 3,
+      "tactic": "simp only [\u2190 interior_closedBall _ hr] at hx hy\u22a2",
+      "step_logprob": -41.53125,
+      "cumulative_logprob": -102.4375
+    },
+    {
+      "step": 4,
+      "tactic": "exact strictConvex_closedBall \u211d z r hx hy hne ha hb hab",
+      "step_logprob": -17.015625,
+      "cumulative_logprob": -119.453125
+    }
+  ],
+  "Set.MapsTo.piecewise_ite": [
+    {
+      "step": 0,
+      "tactic": "refine' (h\u2081.congr _).union_union (h\u2082.congr _)",
+      "step_logprob": -42.0625,
+      "cumulative_logprob": -42.0625
+    },
+    {
+      "step": 1,
+      "tactic": "exacts [(piecewise_eqOn s f\u2081 f\u2082).symm.mono (inter_subset_right _ _),\n  (piecewise_eqOn_compl s f\u2081 f\u2082).symm.mono (inter_subset_right _ _)]",
+      "step_logprob": -76.625,
+      "cumulative_logprob": -118.6875
+    }
+  ],
+  "Cardinal.ord_aleph_eq_enum_card": [
+    {
+      "step": 0,
+      "tactic": "rw [\u2190 eq_enumOrd _ ord_card_unbounded']",
+      "step_logprob": -75.8125,
+      "cumulative_logprob": -75.8125
+    },
+    {
+      "step": 1,
+      "tactic": "use aleph_isNormal.strictMono",
+      "step_logprob": -18.53125,
+      "cumulative_logprob": -94.34375
+    },
+    {
+      "step": 2,
+      "tactic": "rw [range_eq_iff]",
+      "step_logprob": -9.0703125,
+      "cumulative_logprob": -103.4140625
+    },
+    {
+      "step": 3,
+      "tactic": "refine' \u27e8fun a => \u27e8_, _\u27e9, fun b hb => eq_aleph_of_eq_card_ord hb.1 hb.2\u27e9",
+      "step_logprob": -63.09375,
+      "cumulative_logprob": -166.5078125
+    },
+    {
+      "step": 4,
+      "tactic": "rw [Function.comp_apply, card_ord]",
+      "step_logprob": -12.5,
+      "cumulative_logprob": -179.0078125
+    },
+    {
+      "step": 5,
+      "tactic": "rw [\u2190 ord_aleph0, Function.comp_apply, ord_le_ord]",
+      "step_logprob": -32.75,
+      "cumulative_logprob": -211.7578125
+    },
+    {
+      "step": 6,
+      "tactic": "exact aleph0_le_aleph _",
+      "step_logprob": -6.80078125,
+      "cumulative_logprob": -218.55859375
+    }
+  ],
+  "nhds_pi": [
+    {
+      "step": 0,
+      "tactic": "simp only [nhds_iInf, nhds_induced, Filter.pi]",
+      "step_logprob": -22.953125,
+      "cumulative_logprob": -22.953125
+    }
+  ],
+  "LipschitzWith.to_rightInverse": [
+    {
+      "step": 0,
+      "tactic": "simpa only [hg _] using hf (g x) (g y)",
+      "step_logprob": -24.828125,
+      "cumulative_logprob": -24.828125
+    }
+  ],
+  "Equiv.Perm.signAux_mul": [
+    {
+      "step": 0,
+      "tactic": "rw [\u2190 signAux_inv g]",
+      "step_logprob": -21.453125,
+      "cumulative_logprob": -21.453125
+    },
+    {
+      "step": 1,
+      "tactic": "unfold signAux",
+      "step_logprob": -9.1015625,
+      "cumulative_logprob": -30.5546875
+    },
+    {
+      "step": 2,
+      "tactic": "rw [\u2190 prod_mul_distrib]",
+      "step_logprob": -10.7890625,
+      "cumulative_logprob": -41.34375
+    },
+    {
+      "step": 3,
+      "tactic": "refine'\n  prod_bij (fun a _ => signBijAux g a) signBijAux_mem _ signBijAux_inj\n  (by simpa using signBijAux_surj)",
+      "step_logprob": -92.25,
+      "cumulative_logprob": -133.59375
+    },
+    {
+      "step": 4,
+      "tactic": "rintro \u27e8a, b\u27e9 hab",
+      "step_logprob": -8.203125,
+      "cumulative_logprob": -141.796875
+    },
+    {
+      "step": 5,
+      "tactic": "dsimp only [signBijAux]",
+      "step_logprob": -10.359375,
+      "cumulative_logprob": -152.15625
+    },
+    {
+      "step": 6,
+      "tactic": "rw [mul_apply, mul_apply]",
+      "step_logprob": -10.8046875,
+      "cumulative_logprob": -162.9609375
+    },
+    {
+      "step": 7,
+      "tactic": "rw [mem_finPairsLT] at hab",
+      "step_logprob": -8.28125,
+      "cumulative_logprob": -171.2421875
+    },
+    {
+      "step": 8,
+      "tactic": "by_cases h : g b < g a",
+      "step_logprob": -4.859375,
+      "cumulative_logprob": -176.1015625
+    },
+    {
+      "step": 9,
+      "tactic": "simpa using signBijAux_surj",
+      "step_logprob": -23.40625,
+      "cumulative_logprob": -199.5078125
+    },
+    {
+      "step": 10,
+      "tactic": "rw [dif_pos h]",
+      "step_logprob": -10.9453125,
+      "cumulative_logprob": -210.453125
+    },
+    {
+      "step": 11,
+      "tactic": "simp only [not_le_of_gt hab, mul_one, mul_ite, mul_neg, Perm.inv_apply_self, if_false]",
+      "step_logprob": -59.15625,
+      "cumulative_logprob": -269.609375
+    },
+    {
+      "step": 12,
+      "tactic": "split_ifs with h\u2081 h\u2082 h\u2083 <;> dsimp at *",
+      "step_logprob": -19.078125,
+      "cumulative_logprob": -288.6875
+    },
+    {
+      "step": 13,
+      "tactic": ". exact absurd hab (not_lt_of_ge h\u2082)",
+      "step_logprob": -34.0625,
+      "cumulative_logprob": -322.75
+    },
+    {
+      "step": 14,
+      "tactic": ". exact absurd hab (not_lt_of_ge h\u2083)",
+      "step_logprob": -28.53125,
+      "cumulative_logprob": -351.28125
+    },
+    {
+      "step": 15,
+      "tactic": "exact absurd hab (not_lt_of_ge h\u2082)",
+      "step_logprob": -22.15625,
+      "cumulative_logprob": -373.4375
+    },
+    {
+      "step": 16,
+      "tactic": "exact absurd hab (not_lt_of_ge h\u2083)",
+      "step_logprob": -19.328125,
+      "cumulative_logprob": -392.765625
+    },
+    {
+      "step": 17,
+      "tactic": "rw [dif_neg h, inv_apply_self, inv_apply_self, if_pos hab.le]",
+      "step_logprob": -50.3125,
+      "cumulative_logprob": -443.078125
+    },
+    {
+      "step": 18,
+      "tactic": "by_cases h\u2081 : f (g b) \u2264 f (g a)",
+      "step_logprob": -10.5234375,
+      "cumulative_logprob": -453.6015625
+    },
+    {
+      "step": 19,
+      "tactic": "have : f (g b) \u2260 f (g a) := by\n  rw [Ne.def, f.injective.eq_iff, g.injective.eq_iff]\n  exact ne_of_lt hab",
+      "step_logprob": -61.78125,
+      "cumulative_logprob": -515.3828125
+    },
+    {
+      "step": 20,
+      "tactic": "rw [if_pos h\u2081, if_neg (h\u2081.lt_of_ne this).not_le]",
+      "step_logprob": -30.75,
+      "cumulative_logprob": -546.1328125
+    },
+    {
+      "step": 21,
+      "tactic": "rfl",
+      "step_logprob": -5.55859375,
+      "cumulative_logprob": -551.69140625
+    },
+    {
+      "step": 22,
+      "tactic": "rw [Ne.def, f.injective.eq_iff, g.injective.eq_iff]",
+      "step_logprob": -38.03125,
+      "cumulative_logprob": -589.72265625
+    },
+    {
+      "step": 23,
+      "tactic": "exact ne_of_lt hab",
+      "step_logprob": -8.75,
+      "cumulative_logprob": -598.47265625
+    },
+    {
+      "step": 24,
+      "tactic": "rw [if_neg h\u2081, if_pos (lt_of_not_ge h\u2081).le]",
+      "step_logprob": -37.15625,
+      "cumulative_logprob": -635.62890625
+    },
+    {
+      "step": 25,
+      "tactic": "rfl",
+      "step_logprob": -5.87109375,
+      "cumulative_logprob": -641.5
+    }
+  ],
+  "Finset.aemeasurable_prod": [
+    {
+      "step": 0,
+      "tactic": "simpa only [\u2190 Finset.prod_apply] using s.aemeasurable_prod' hf",
+      "step_logprob": -26.46875,
+      "cumulative_logprob": -26.46875
+    }
+  ],
+  "Submodule.map_liftQ": [
+    {
+      "step": 0,
+      "tactic": "rintro _ \u27e8\u27e8x\u27e9, hxq, rfl\u27e9",
+      "step_logprob": -14.2734375,
+      "cumulative_logprob": -14.2734375
+    },
+    {
+      "step": 1,
+      "tactic": "exact \u27e8x, hxq, rfl\u27e9",
+      "step_logprob": -3.181640625,
+      "cumulative_logprob": -17.455078125
+    },
+    {
+      "step": 2,
+      "tactic": "rintro _ \u27e8x, hxq, rfl\u27e9",
+      "step_logprob": -10.6328125,
+      "cumulative_logprob": -28.087890625
+    },
+    {
+      "step": 3,
+      "tactic": "exact \u27e8Quotient.mk x, hxq, rfl\u27e9",
+      "step_logprob": -15.0703125,
+      "cumulative_logprob": -43.158203125
+    }
+  ],
+  "Polynomial.leadingCoeff_X_pow_add_C": [
+    {
+      "step": 0,
+      "tactic": "nontriviality R",
+      "step_logprob": -13.515625,
+      "cumulative_logprob": -13.515625
+    },
+    {
+      "step": 1,
+      "tactic": "rw [leadingCoeff, natDegree_X_pow_add_C, coeff_add, coeff_X_pow_self, coeff_C,\n  if_neg (pos_iff_ne_zero.mp hn), add_zero]",
+      "step_logprob": -39.375,
+      "cumulative_logprob": -52.890625
+    }
+  ],
+  "PreErgodic.prob_eq_zero_or_one": [
+    {
+      "step": 0,
+      "tactic": "simpa [hs] using hf.measure_self_or_compl_eq_zero hs hs'",
+      "step_logprob": -41.46875,
+      "cumulative_logprob": -41.46875
+    }
+  ],
+  "DenseRange.topologicalClosure_map_submodule": [
+    {
+      "step": 0,
+      "tactic": "rw [SetLike.ext'_iff] at hs\u22a2",
+      "step_logprob": -19.21875,
+      "cumulative_logprob": -19.21875
+    },
+    {
+      "step": 1,
+      "tactic": "simp only [Submodule.topologicalClosure_coe, Submodule.top_coe, \u2190 dense_iff_closure_eq] at hs\u22a2",
+      "step_logprob": -53.09375,
+      "cumulative_logprob": -72.3125
+    },
+    {
+      "step": 2,
+      "tactic": "exact hf'.dense_image f.continuous hs",
+      "step_logprob": -13.4765625,
+      "cumulative_logprob": -85.7890625
+    }
+  ],
+  "Polynomial.iterate_derivative_X_pow_eq_nat_cast_mul": [
+    {
+      "step": 0,
+      "tactic": "induction' k with k ih",
+      "step_logprob": -2.5546875,
+      "cumulative_logprob": -2.5546875
+    },
+    {
+      "step": 1,
+      "tactic": "erw [Function.iterate_zero_apply, tsub_zero, Nat.descFactorial_zero, Nat.cast_one, one_mul]",
+      "step_logprob": -28.875,
+      "cumulative_logprob": -31.4296875
+    },
+    {
+      "step": 2,
+      "tactic": "rw [Function.iterate_succ_apply', ih, derivative_nat_cast_mul, derivative_X_pow, C_eq_nat_cast,\n  Nat.succ_eq_add_one, Nat.descFactorial_succ, Nat.sub_sub, Nat.cast_mul]",
+      "step_logprob": -53.3125,
+      "cumulative_logprob": -84.7421875
+    },
+    {
+      "step": 3,
+      "tactic": "simp [mul_comm, mul_assoc, mul_left_comm]",
+      "step_logprob": -7.1015625,
+      "cumulative_logprob": -91.84375
+    }
+  ],
+  "AffineSubspace.Parallel.direction_eq": [
+    {
+      "step": 0,
+      "tactic": "rcases h with \u27e8v, rfl\u27e9",
+      "step_logprob": -16.21875,
+      "cumulative_logprob": -16.21875
+    },
+    {
+      "step": 1,
+      "tactic": "simp",
+      "step_logprob": -0.86083984375,
+      "cumulative_logprob": -17.07958984375
+    }
+  ],
+  "Order.Ideal.PrimePair.I_isPrime": [
+    {
+      "step": 0,
+      "tactic": "rw [IF.compl_I_eq_F]",
+      "step_logprob": -22.703125,
+      "cumulative_logprob": -22.703125
+    },
+    {
+      "step": 1,
+      "tactic": "exact IF.F.isPFilter",
+      "step_logprob": -8.6796875,
+      "cumulative_logprob": -31.3828125
+    }
+  ],
+  "RelHomClass.acc": [
+    {
+      "step": 0,
+      "tactic": "generalize h : f a = b",
+      "step_logprob": -13.796875,
+      "cumulative_logprob": -13.796875
+    },
+    {
+      "step": 1,
+      "tactic": "intro ac",
+      "step_logprob": -7.98046875,
+      "cumulative_logprob": -21.77734375
+    },
+    {
+      "step": 2,
+      "tactic": "induction' ac with _ H IH generalizing a",
+      "step_logprob": -15.9453125,
+      "cumulative_logprob": -37.72265625
+    },
+    {
+      "step": 3,
+      "tactic": "subst h",
+      "step_logprob": -9.453125,
+      "cumulative_logprob": -47.17578125
+    },
+    {
+      "step": 4,
+      "tactic": "exact \u27e8_, fun a' h => IH (f a') (map_rel f h) _ rfl\u27e9",
+      "step_logprob": -29.84375,
+      "cumulative_logprob": -77.01953125
+    }
+  ],
+  "RatFunc.mk_eq_localization_mk": [
+    {
+      "step": 0,
+      "tactic": "rw [mk_def_of_ne, Localization.mk_eq_mk'] <;> exact hq",
+      "step_logprob": -50.75,
+      "cumulative_logprob": -50.75
+    }
+  ],
+  "orthogonalProjection_eq_linear_proj": [
+    {
+      "step": 0,
+      "tactic": "have : IsCompl K K\u15ee := Submodule.isCompl_orthogonal_of_completeSpace",
+      "step_logprob": -23.875,
+      "cumulative_logprob": -23.875
+    },
+    {
+      "step": 1,
+      "tactic": "conv_lhs => rw [\u2190 Submodule.linear_proj_add_linearProjOfIsCompl_eq_self this x]",
+      "step_logprob": -38.6875,
+      "cumulative_logprob": -62.5625
+    },
+    {
+      "step": 2,
+      "tactic": "rw [map_add, orthogonalProjection_mem_subspace_eq_self,\n  orthogonalProjection_mem_subspace_orthogonalComplement_eq_zero (Submodule.coe_mem _), add_zero]",
+      "step_logprob": -52.375,
+      "cumulative_logprob": -114.9375
+    }
+  ]
+}
