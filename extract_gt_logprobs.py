@@ -1,247 +1,303 @@
 """
 extract_gt_logprobs.py
 ======================
-Teacher-Forcing scoring script for LeanDojo-v2.
+Teacher-Forcing scoring: compute Ground Truth cumulative log-probability
+of expert tactic sequences.
 
-Computes the Ground Truth cumulative log-probability of expert (human-written)
-tactic sequences by running the ReProver model in teacher-forcing mode:
-for each proof step the model scores the *known correct* tactic rather than
-generating its own.
-
-Output: a JSON dict  { theorem_full_name: gt_cumulative_logprob, ... }
-that can be fed to ``search_analysis_master.py --ground_truth``.
+Supports two model backends:
+  - **Causal LM** (decoder-only): DeepSeek-Prover-V2, LLaMA, etc.
+  - **Seq2Seq**  (encoder-decoder): ReProver / ByT5-based models
 
 Usage
 -----
-# Dojo mode (default) — live Lean interaction, most accurate states
-python extract_gt_logprobs.py \
-    --dataset_path  data/random/test.json \
-    --ckpt_path     checkpoints/reprover.ckpt \
-    --output_path   logs/gt_logprobs.json \
-    --timeout       300
-
-# Offline mode — uses state_before from dataset directly, no Lean needed
-python extract_gt_logprobs.py \
-    --dataset_path  data/random/test.json \
-    --ckpt_path     checkpoints/reprover.ckpt \
-    --output_path   logs/gt_logprobs.json \
+# DeepSeek-Prover-V2 (causal LM, offline, no Lean required)
+python extract_gt_logprobs.py \\
+    --dataset_path data/leandojo_benchmark/random/test.json \\
+    --ckpt_path "deepseek-ai/DeepSeek-Prover-V2-7B" \\
+    --output_path logs/gt_logprobs.json \\
+    --details_path logs/gt_details.json \\
     --offline
+
+# ReProver checkpoint (seq2seq T5, offline)
+python extract_gt_logprobs.py \\
+    --dataset_path data/random/test.json \\
+    --ckpt_path checkpoints/reprover.ckpt \\
+    --model_type seq2seq \\
+    --output_path logs/gt_logprobs.json \\
+    --offline
+
+# Dojo mode (live Lean interaction, any model)
+python extract_gt_logprobs.py \\
+    --dataset_path data/random/test.json \\
+    --ckpt_path "deepseek-ai/DeepSeek-Prover-V2-7B" \\
+    --output_path logs/gt_logprobs.json \\
+    --timeout 300
 """
 
 import argparse
 import json
-import os
+import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
 from loguru import logger
 from tqdm import tqdm
-
-from lean_dojo_v2.lean_agent.common import format_state, format_augmented_state
-from lean_dojo_v2.lean_agent.generator.model import RetrievalAugmentedGenerator
-from lean_dojo_v2.lean_dojo import (
-    Dojo,
-    DojoCrashError,
-    DojoInitError,
-    DojoTacticTimeoutError,
-    LeanError,
-    LeanGitRepo,
-    Pos,
-    ProofFinished,
-    ProofGivenUp,
-    TacticState,
-    Theorem,
-)
-from lean_dojo_v2.utils.common import zip_strict
-from lean_dojo_v2.utils.constants import remove_marks
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 # ---------------------------------------------------------------------------
-# Core: score a single tactic given a state
+# Utility: inline format_state so we don't depend on lean_dojo_v2 imports
 # ---------------------------------------------------------------------------
 
-
-@torch.no_grad()
-def score_tactic(
-    model: RetrievalAugmentedGenerator,
-    state_text: str,
-    tactic_text: str,
-) -> float:
-    """Compute log P(tactic | state) via a single teacher-forcing forward pass.
-
-    Returns the *sum* of per-token log-probabilities (not the average),
-    which is the quantity that gets accumulated into cumulative_logprob
-    during best-first search.
-    """
-    tokenizer = model.tokenizer
-    device = model.device
-
-    # --- Encode state (encoder input) ---
-    enc = tokenizer(
-        state_text,
-        padding=False,
-        max_length=model.max_inp_seq_len,
-        truncation=True,
-        return_tensors="pt",
-    )
-    state_ids = enc.input_ids.to(device)
-    state_mask = enc.attention_mask.to(device)
-
-    # --- Encode target tactic (decoder labels) ---
-    dec = tokenizer(
-        tactic_text,
-        padding=False,
-        max_length=model.max_oup_seq_len,
-        truncation=True,
-        return_tensors="pt",
-    )
-    tactic_ids = dec.input_ids.to(device)  # (1, tgt_len)
-
-    # Mask padding tokens with -100 (ignored in loss)
-    label_ids = tactic_ids.clone()
-    label_ids[label_ids == tokenizer.pad_token_id] = -100
-
-    # --- Forward pass ---
-    output = model.generator(
-        input_ids=state_ids,
-        attention_mask=state_mask,
-        labels=label_ids,
-    )
-    logits = output.logits  # (1, tgt_len, vocab_size)
-
-    # --- Gather log-probs at target positions ---
-    log_probs = F.log_softmax(logits, dim=-1)  # (1, tgt_len, vocab)
-
-    # Replace -100 with 0 for gathering (masked out below)
-    gather_ids = label_ids.clone()
-    gather_ids[gather_ids == -100] = 0
-    token_log_probs = log_probs.gather(2, gather_ids.unsqueeze(2)).squeeze(2)  # (1, tgt_len)
-
-    # Sum only over real (non-padding) tokens
-    mask = (label_ids != -100).float()
-    total_log_prob = (token_log_probs * mask).sum().item()
-
-    return total_log_prob
+def format_state(s: str) -> str:
+    """Strip the 'N goals' prefix that LeanDojo prepends to tactic states."""
+    m = re.match(r"\d+ goals?\n", s)
+    if m is not None:
+        return s[m.end():].strip()
+    return s
 
 
 # ---------------------------------------------------------------------------
-# Dojo mode: live Lean interaction
+# Lazy Dojo imports (only when --offline is NOT set)
 # ---------------------------------------------------------------------------
 
+_dojo_imports_loaded = False
+Dojo = None
+TacticState = None
+ProofFinished = None
+LeanError = None
+LeanGitRepo = None
+Pos = None
+Theorem = None
 
-def score_theorem_dojo(
-    model: RetrievalAugmentedGenerator,
-    thm_data: dict,
-    timeout: int,
-) -> Optional[Tuple[str, float, List[dict]]]:
-    """Score one theorem using Dojo for live state tracking.
 
-    Returns (full_name, cumulative_logprob, per_step_details) or None on failure.
-    """
-    full_name = thm_data["full_name"]
-    traced_tactics = thm_data.get("traced_tactics", [])
+def _load_dojo_imports():
+    """Try importing Dojo types from lean_dojo (upstream) or lean_dojo_v2."""
+    global _dojo_imports_loaded
+    global Dojo, TacticState, ProofFinished, LeanError
+    global LeanGitRepo, Pos, Theorem
 
-    if not traced_tactics:
-        logger.warning(f"[{full_name}] No traced tactics, skipping.")
-        return None
+    if _dojo_imports_loaded:
+        return
 
-    # Filter out trivial steps
-    tactics_to_score = [
-        t for t in traced_tactics
-        if t.get("state_before", "") != "no goals" and "·" not in t.get("tactic", "")
-    ]
-    if not tactics_to_score:
-        logger.warning(f"[{full_name}] No valid tactics after filtering, skipping.")
-        return None
-
-    # Build Theorem object for Dojo
-    repo = LeanGitRepo(thm_data["url"], thm_data["commit"])
-    start = Pos(*thm_data["start"])
-    end = Pos(*thm_data["end"])
-    thm = Theorem(repo, thm_data["file_path"], full_name, start, end)
-
-    cumulative_logprob = 0.0
-    step_details = []
-
+    # Try the original lean_dojo package first
     try:
-        with Dojo(thm, timeout) as (dojo, init_state):
-            state = init_state
+        from lean_dojo import (
+            Dojo as _Dojo,
+            TacticState as _TS,
+            ProofFinished as _PF,
+            LeanError as _LE,
+            LeanGitRepo as _LGR,
+            Pos as _Pos,
+            Theorem as _Thm,
+        )
+        Dojo, TacticState, ProofFinished = _Dojo, _TS, _PF
+        LeanError, LeanGitRepo, Pos, Theorem = _LE, _LGR, _Pos, _Thm
+        _dojo_imports_loaded = True
+        logger.info("Dojo imported from 'lean_dojo'")
+        return
+    except ImportError:
+        pass
 
-            for i, tac_data in enumerate(tactics_to_score):
-                tactic_str = tac_data["tactic"]
+    # Fallback: lean_dojo_v2.lean_dojo
+    try:
+        from lean_dojo_v2.lean_dojo import (
+            Dojo as _Dojo,
+            TacticState as _TS,
+            ProofFinished as _PF,
+            LeanError as _LE,
+            LeanGitRepo as _LGR,
+            Pos as _Pos,
+            Theorem as _Thm,
+        )
+        Dojo, TacticState, ProofFinished = _Dojo, _TS, _PF
+        LeanError, LeanGitRepo, Pos, Theorem = _LE, _LGR, _Pos, _Thm
+        _dojo_imports_loaded = True
+        logger.info("Dojo imported from 'lean_dojo_v2.lean_dojo'")
+        return
+    except ImportError:
+        pass
 
-                # Get pretty-printed state
-                if isinstance(state, TacticState):
-                    state_text = format_state(state.pp)
-                else:
-                    state_text = format_state(str(state))
-
-                # Score the expert tactic
-                step_lp = score_tactic(model, state_text, tactic_str)
-                cumulative_logprob += step_lp
-
-                step_details.append({
-                    "step": i,
-                    "tactic": tactic_str,
-                    "step_logprob": step_lp,
-                    "cumulative_logprob": cumulative_logprob,
-                })
-
-                # Execute the tactic to advance Lean state
-                response = dojo.run_tac(state, tactic_str)
-
-                if isinstance(response, ProofFinished):
-                    logger.debug(f"[{full_name}] Proof finished at step {i}.")
-                    break
-                elif isinstance(response, TacticState):
-                    state = response
-                elif isinstance(response, LeanError):
-                    logger.warning(
-                        f"[{full_name}] LeanError at step {i}: "
-                        f"{getattr(response, 'error', str(response))}"
-                    )
-                    break
-                else:
-                    logger.warning(
-                        f"[{full_name}] Unexpected response at step {i}: {type(response)}"
-                    )
-                    break
-
-    except DojoInitError as e:
-        logger.warning(f"[{full_name}] DojoInitError: {e}")
-        return None
-    except DojoCrashError as e:
-        logger.warning(f"[{full_name}] DojoCrashError: {e}")
-        return None
-    except Exception as e:
-        logger.warning(f"[{full_name}] Unexpected error: {e}")
-        return None
-
-    return full_name, cumulative_logprob, step_details
+    logger.error(
+        "Cannot import Dojo. Install lean_dojo or use --offline mode."
+    )
+    sys.exit(1)
 
 
-# ---------------------------------------------------------------------------
-# Offline mode: use state_before from dataset (no Lean required)
-# ---------------------------------------------------------------------------
+# ===================================================================
+# Model Backends
+# ===================================================================
+
+
+class CausalLMScorer:
+    """Teacher-forcing scorer for decoder-only models (DeepSeek, LLaMA, …)."""
+
+    def __init__(self, model_name_or_path: str, device: torch.device,
+                 dtype: torch.dtype = torch.float16,
+                 prompt_template: Optional[str] = None):
+        logger.info(f"Loading causal LM: {model_name_or_path}")
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name_or_path, trust_remote_code=True,
+        )
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name_or_path, torch_dtype=dtype, trust_remote_code=True,
+            device_map=device if str(device) != "cpu" else None,
+        )
+        if str(device) == "cpu" or self.model.device == torch.device("cpu"):
+            self.model = self.model.to(device)
+        self.model.eval()
+        self.device = next(self.model.parameters()).device
+
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+
+        # Prompt template: {state} and {tactic} are placeholders
+        self.prompt_template = prompt_template or (
+            "Complete the following Lean 4 tactic proof.\n\n"
+            "State:\n{state}\n\n"
+            "Tactic:\n{tactic}"
+        )
+        # The "context" part is everything before {tactic}
+        self._context_template = self.prompt_template.split("{tactic}")[0]
+
+        logger.info(f"CausalLMScorer ready on {self.device}")
+
+    @torch.no_grad()
+    def score(self, state_text: str, tactic_text: str) -> float:
+        """Return sum of log P(tactic_token_i | context) — the step_logprob."""
+        context = self._context_template.format(state=state_text)
+        full_text = self.prompt_template.format(
+            state=state_text, tactic=tactic_text,
+        )
+
+        # Tokenize context and full text separately to find the split point
+        ctx_ids = self.tokenizer.encode(context, add_special_tokens=True)
+        full_enc = self.tokenizer(
+            full_text, return_tensors="pt", add_special_tokens=True,
+        )
+        full_ids = full_enc.input_ids.to(self.device)  # (1, L)
+
+        n_ctx = len(ctx_ids)  # number of context tokens (state + prompt)
+        n_full = full_ids.shape[1]
+
+        if n_ctx >= n_full:
+            # Tactic produced no extra tokens (degenerate case)
+            return 0.0
+
+        logits = self.model(full_ids).logits  # (1, L, V)
+
+        # Causal LM: logits[t] predicts token[t+1]
+        # We want log P(token[n_ctx], token[n_ctx+1], …, token[n_full-1])
+        # In shifted space: positions (n_ctx - 1) .. (n_full - 2)
+        shift_logits = logits[:, :-1, :]              # (1, L-1, V)
+        shift_labels = full_ids[:, 1:]                 # (1, L-1)
+
+        log_probs = F.log_softmax(shift_logits, dim=-1)
+        token_lps = log_probs.gather(
+            2, shift_labels.unsqueeze(2)
+        ).squeeze(2)  # (1, L-1)
+
+        # Sum only over tactic tokens
+        tactic_lps = token_lps[:, n_ctx - 1:]
+        return tactic_lps.sum().item()
+
+
+class Seq2SeqScorer:
+    """Teacher-forcing scorer for encoder-decoder models (ReProver / ByT5)."""
+
+    def __init__(self, ckpt_path: str, device: torch.device,
+                 ret_ckpt_path: Optional[str] = None):
+        logger.info(f"Loading seq2seq model from checkpoint: {ckpt_path}")
+        try:
+            from lean_dojo_v2.lean_agent.generator.model import (
+                RetrievalAugmentedGenerator,
+            )
+        except ImportError:
+            logger.error(
+                "Cannot import RetrievalAugmentedGenerator. "
+                "Make sure lean_dojo_v2 is installed for seq2seq mode."
+            )
+            sys.exit(1)
+
+        config = {
+            "model_name": "kaiyuy/leandojo-lean4-retriever-tacgen-byt5-small",
+            "lr": 1e-3,
+            "warmup_steps": 1000,
+            "num_beams": 5,
+            "eval_num_retrieved": 10,
+            "eval_num_workers": 1,
+            "eval_num_gpus": 1,
+            "eval_num_theorems": 100,
+            "max_inp_seq_len": 512,
+            "max_oup_seq_len": 128,
+            "ret_ckpt_path": ret_ckpt_path,
+        }
+        self.model = RetrievalAugmentedGenerator.load(
+            ckpt_path, device=device, freeze=True, config=config,
+        )
+        self.model.eval()
+        self.tokenizer = self.model.tokenizer
+        self.device = device
+        logger.info("Seq2SeqScorer ready.")
+
+    @torch.no_grad()
+    def score(self, state_text: str, tactic_text: str) -> float:
+        """Return sum of log P(tactic_token_i | state)."""
+        enc = self.tokenizer(
+            state_text, padding=False,
+            max_length=self.model.max_inp_seq_len,
+            truncation=True, return_tensors="pt",
+        )
+        state_ids = enc.input_ids.to(self.device)
+        state_mask = enc.attention_mask.to(self.device)
+
+        dec = self.tokenizer(
+            tactic_text, padding=False,
+            max_length=self.model.max_oup_seq_len,
+            truncation=True, return_tensors="pt",
+        )
+        label_ids = dec.input_ids.to(self.device)
+        label_ids[label_ids == self.tokenizer.pad_token_id] = -100
+
+        output = self.model.generator(
+            input_ids=state_ids,
+            attention_mask=state_mask,
+            labels=label_ids,
+        )
+        logits = output.logits
+        log_probs = F.log_softmax(logits, dim=-1)
+
+        gather_ids = label_ids.clone()
+        gather_ids[gather_ids == -100] = 0
+        token_lps = log_probs.gather(
+            2, gather_ids.unsqueeze(2)
+        ).squeeze(2)
+
+        mask = (label_ids != -100).float()
+        return (token_lps * mask).sum().item()
+
+
+# ===================================================================
+# Scoring drivers (offline / Dojo)
+# ===================================================================
 
 
 def score_theorem_offline(
-    model: RetrievalAugmentedGenerator,
-    thm_data: dict,
+    scorer, thm_data: dict,
 ) -> Optional[Tuple[str, float, List[dict]]]:
-    """Score one theorem using pre-recorded state_before from the dataset."""
+    """Score using pre-recorded state_before from the dataset."""
     full_name = thm_data["full_name"]
     traced_tactics = thm_data.get("traced_tactics", [])
-
     if not traced_tactics:
         return None
 
     tactics_to_score = [
         t for t in traced_tactics
-        if t.get("state_before", "") != "no goals" and "·" not in t.get("tactic", "")
+        if t.get("state_before", "") not in ("", "no goals")
+        and "·" not in t.get("tactic", "")
     ]
     if not tactics_to_score:
         return None
@@ -254,7 +310,7 @@ def score_theorem_offline(
         state_text = format_state(tac_data["state_before"])
 
         try:
-            step_lp = score_tactic(model, state_text, tactic_str)
+            step_lp = scorer.score(state_text, tactic_str)
         except Exception as e:
             logger.warning(f"[{full_name}] Scoring error at step {i}: {e}")
             return None
@@ -270,97 +326,175 @@ def score_theorem_offline(
     return full_name, cumulative_logprob, step_details
 
 
-# ---------------------------------------------------------------------------
+def score_theorem_dojo(
+    scorer, thm_data: dict, timeout: int,
+) -> Optional[Tuple[str, float, List[dict]]]:
+    """Score using Dojo for live Lean state tracking."""
+    _load_dojo_imports()
+
+    full_name = thm_data["full_name"]
+    traced_tactics = thm_data.get("traced_tactics", [])
+    if not traced_tactics:
+        logger.warning(f"[{full_name}] No traced tactics, skipping.")
+        return None
+
+    tactics_to_score = [
+        t for t in traced_tactics
+        if t.get("state_before", "") not in ("", "no goals")
+        and "·" not in t.get("tactic", "")
+    ]
+    if not tactics_to_score:
+        return None
+
+    repo = LeanGitRepo(thm_data["url"], thm_data["commit"])
+    start = Pos(*thm_data["start"])
+    end = Pos(*thm_data["end"])
+    thm = Theorem(repo, thm_data["file_path"], full_name, start, end)
+
+    cumulative_logprob = 0.0
+    step_details = []
+
+    try:
+        with Dojo(thm, timeout) as (dojo, init_state):
+            state = init_state
+
+            for i, tac_data in enumerate(tactics_to_score):
+                tactic_str = tac_data["tactic"]
+
+                if hasattr(state, "pp"):
+                    state_text = format_state(state.pp)
+                else:
+                    state_text = format_state(str(state))
+
+                step_lp = scorer.score(state_text, tactic_str)
+                cumulative_logprob += step_lp
+
+                step_details.append({
+                    "step": i,
+                    "tactic": tactic_str,
+                    "step_logprob": step_lp,
+                    "cumulative_logprob": cumulative_logprob,
+                })
+
+                response = dojo.run_tac(state, tactic_str)
+
+                if isinstance(response, ProofFinished):
+                    break
+                elif isinstance(response, TacticState):
+                    state = response
+                elif isinstance(response, LeanError):
+                    logger.warning(
+                        f"[{full_name}] LeanError at step {i}: "
+                        f"{getattr(response, 'error', str(response))}"
+                    )
+                    break
+                else:
+                    logger.warning(
+                        f"[{full_name}] Unexpected response at step {i}: "
+                        f"{type(response)}"
+                    )
+                    break
+
+    except Exception as e:
+        logger.warning(f"[{full_name}] Dojo error: {e}")
+        return None
+
+    return full_name, cumulative_logprob, step_details
+
+
+# ===================================================================
+# Model type detection
+# ===================================================================
+
+
+def detect_model_type(ckpt_path: str) -> str:
+    """Heuristic: .ckpt → seq2seq (ReProver);  HF model ID → causal_lm."""
+    if ckpt_path.endswith(".ckpt"):
+        return "seq2seq"
+    return "causal_lm"
+
+
+# ===================================================================
 # Main
-# ---------------------------------------------------------------------------
+# ===================================================================
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Compute Ground Truth cumulative log-probs via teacher forcing."
+        description="Compute GT cumulative log-probs via teacher forcing.",
     )
     parser.add_argument(
-        "--dataset_path",
-        type=str,
-        required=True,
+        "--dataset_path", type=str, required=True,
         help="Path to test.json (LeanDojo export with traced_tactics).",
     )
     parser.add_argument(
-        "--ckpt_path",
-        type=str,
-        required=True,
-        help="Path to ReProver / RetrievalAugmentedGenerator checkpoint.",
+        "--ckpt_path", type=str, required=True,
+        help="HuggingFace model ID or local checkpoint path.",
     )
     parser.add_argument(
-        "--output_path",
-        type=str,
-        default="logs/gt_logprobs.json",
-        help="Output JSON path (default: logs/gt_logprobs.json).",
+        "--model_type", type=str, default="auto",
+        choices=["auto", "causal_lm", "seq2seq"],
+        help="Model architecture (default: auto-detect).",
     )
     parser.add_argument(
-        "--details_path",
-        type=str,
-        default=None,
-        help="Optional path to save per-step scoring details as JSON.",
+        "--output_path", type=str, default="logs/gt_logprobs.json",
     )
     parser.add_argument(
-        "--timeout",
-        type=int,
-        default=300,
-        help="Dojo timeout per theorem in seconds (default: 300).",
+        "--details_path", type=str, default=None,
+        help="Optional path for per-step scoring details.",
+    )
+    parser.add_argument("--timeout", type=int, default=300)
+    parser.add_argument(
+        "--offline", action="store_true",
+        help="Use state_before from dataset (no Lean/Dojo required).",
+    )
+    parser.add_argument("--device", type=str, default=None)
+    parser.add_argument(
+        "--dtype", type=str, default="float16",
+        choices=["float16", "bfloat16", "float32"],
+        help="Weight dtype for causal LM (default: float16).",
     )
     parser.add_argument(
-        "--offline",
-        action="store_true",
-        help="Use state_before from dataset instead of live Dojo interaction.",
+        "--ret_ckpt_path", type=str, default=None,
+        help="Retriever checkpoint (seq2seq mode only).",
     )
     parser.add_argument(
-        "--device",
-        type=str,
-        default=None,
-        help="Device (default: cuda if available, else cpu).",
+        "--prompt_template", type=str, default=None,
+        help="Custom prompt template with {state} and {tactic} placeholders.",
     )
-    parser.add_argument(
-        "--ret_ckpt_path",
-        type=str,
-        default=None,
-        help="Optional retriever checkpoint (for premise-augmented states).",
-    )
-    parser.add_argument(
-        "--max_theorems",
-        type=int,
-        default=None,
-        help="Limit the number of theorems to process (for debugging).",
-    )
+    parser.add_argument("--max_theorems", type=int, default=None)
     args = parser.parse_args()
 
-    # --- Device ---
+    # --- Device & dtype ---
     if args.device:
         device = torch.device(args.device)
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logger.info(f"Using device: {device}")
 
-    # --- Load model ---
-    logger.info(f"Loading model from {args.ckpt_path}")
-    config = {
-        "model_name": "kaiyuy/leandojo-lean4-retriever-tacgen-byt5-small",
-        "lr": 1e-3,
-        "warmup_steps": 1000,
-        "num_beams": 5,
-        "eval_num_retrieved": 10,
-        "eval_num_workers": 1,
-        "eval_num_gpus": 1,
-        "eval_num_theorems": 100,
-        "max_inp_seq_len": 512,
-        "max_oup_seq_len": 128,
-        "ret_ckpt_path": args.ret_ckpt_path,
+    dtype_map = {
+        "float16": torch.float16,
+        "bfloat16": torch.bfloat16,
+        "float32": torch.float32,
     }
-    model = RetrievalAugmentedGenerator.load(
-        args.ckpt_path, device=device, freeze=True, config=config
-    )
-    model.eval()
-    logger.info("Model loaded and set to eval mode.")
+
+    # --- Detect model type ---
+    model_type = args.model_type
+    if model_type == "auto":
+        model_type = detect_model_type(args.ckpt_path)
+    logger.info(f"Model type: {model_type} | Device: {device}")
+
+    # --- Build scorer ---
+    if model_type == "causal_lm":
+        scorer = CausalLMScorer(
+            args.ckpt_path, device,
+            dtype=dtype_map[args.dtype],
+            prompt_template=args.prompt_template,
+        )
+    else:
+        scorer = Seq2SeqScorer(
+            args.ckpt_path, device,
+            ret_ckpt_path=args.ret_ckpt_path,
+        )
 
     # --- Load dataset ---
     logger.info(f"Loading dataset from {args.dataset_path}")
@@ -377,15 +511,13 @@ def main():
     n_skipped = 0
 
     mode_label = "offline" if args.offline else "Dojo"
-    logger.info(f"Starting teacher-forcing scoring ({mode_label} mode)...")
+    logger.info(f"Scoring mode: {mode_label}")
 
     for thm_data in tqdm(theorems, desc="Scoring"):
-        full_name = thm_data.get("full_name", "unknown")
-
         if args.offline:
-            result = score_theorem_offline(model, thm_data)
+            result = score_theorem_offline(scorer, thm_data)
         else:
-            result = score_theorem_dojo(model, thm_data, args.timeout)
+            result = score_theorem_dojo(scorer, thm_data, args.timeout)
 
         if result is None:
             n_skipped += 1
@@ -399,29 +531,24 @@ def main():
     # --- Export ---
     output_path = Path(args.output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2)
-    logger.info(f"GT log-probs saved to {output_path}")
+    logger.info(f"GT log-probs saved → {output_path}")
 
     if args.details_path:
-        details_path = Path(args.details_path)
-        details_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(details_path, "w") as f:
+        dp = Path(args.details_path)
+        dp.parent.mkdir(parents=True, exist_ok=True)
+        with open(dp, "w") as f:
             json.dump(all_details, f, indent=2)
-        logger.info(f"Per-step details saved to {details_path}")
+        logger.info(f"Per-step details saved → {dp}")
 
     # --- Summary ---
-    logger.info(
-        f"Done. Scored {n_success} theorems, skipped {n_skipped}."
-    )
+    logger.info(f"Done. Scored {n_success}, skipped {n_skipped}.")
     if results:
         vals = list(results.values())
         logger.info(
-            f"Cumulative log-prob stats:  "
-            f"mean={sum(vals)/len(vals):.3f}  "
-            f"min={min(vals):.3f}  "
-            f"max={max(vals):.3f}"
+            f"Stats:  mean={sum(vals)/len(vals):.3f}  "
+            f"min={min(vals):.3f}  max={max(vals):.3f}"
         )
 
 
