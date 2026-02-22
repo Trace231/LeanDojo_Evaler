@@ -7,6 +7,7 @@ This script follows framework constraints strictly:
 3) Exports search trees via upstream proof_search exporter.
 4) Optionally emits realtime event logs by setting analysis_event_dir.
 """
+from __future__ import annotations
 
 import argparse
 import importlib.util
@@ -23,7 +24,36 @@ from typing import List, Tuple
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from lean_dojo_v2.lean_dojo import LeanGitRepo, Pos, Theorem
+LeanGitRepo = None
+Pos = None
+Theorem = None
+
+
+def _bootstrap_local_lean_dojo_v2() -> None:
+    """
+    Prefer current repo source tree over broken site-packages installations.
+    """
+    repo_root = Path(__file__).resolve().parent
+    if not (repo_root / "lean_agent").exists() or not (repo_root / "lean_dojo").exists():
+        return
+    pkg_name = "lean_dojo_v2"
+    pkg = types.ModuleType(pkg_name)
+    pkg.__path__ = [str(repo_root)]  # type: ignore[attr-defined]
+    pkg.__file__ = str(repo_root / "__init__.py")
+    sys.modules[pkg_name] = pkg
+
+
+def _load_core_symbols() -> None:
+    global LeanGitRepo, Pos, Theorem
+    try:
+        import lean_dojo_v2.lean_agent  # noqa: F401
+    except Exception:
+        _bootstrap_local_lean_dojo_v2()
+    from lean_dojo_v2.lean_dojo import LeanGitRepo as _LeanGitRepo, Pos as _Pos, Theorem as _Theorem
+
+    LeanGitRepo = _LeanGitRepo
+    Pos = _Pos
+    Theorem = _Theorem
 
 
 def _patch_lean_dojo_exports() -> None:
@@ -50,25 +80,33 @@ def _patch_lean_dojo_exports() -> None:
     if not missing:
         return
 
+    candidate_pkgs = []
+    import lean_dojo_v2 as ld2_root
+
+    candidate_pkgs.append(ld2_root)
     try:
         import lean_dojo as ld
-    except Exception as ex:
-        raise RuntimeError(
-            "Current lean_dojo_v2 package lacks runtime Dojo symbols needed by "
-            "BestFirstSearchProver, and fallback import from `lean_dojo` failed. "
-            "Please install a compatible lean_dojo runtime package."
-        ) from ex
+
+        candidate_pkgs.append(ld)
+    except Exception:
+        pass
 
     resolved = {}
-    # First try top-level lean_dojo exports.
-    for name in missing:
-        if hasattr(ld, name):
-            resolved[name] = getattr(ld, name)
 
-    # Then recursively scan submodules for unresolved symbols.
+    # 1) Check top-level exports of candidate packages.
+    for pkg in candidate_pkgs:
+        for name in missing:
+            if name not in resolved and hasattr(pkg, name):
+                resolved[name] = getattr(pkg, name)
+
+    # 2) Recursively scan submodules for unresolved symbols.
     unresolved = [name for name in missing if name not in resolved]
-    if unresolved and hasattr(ld, "__path__"):
-        for mod_info in pkgutil.walk_packages(ld.__path__, prefix=f"{ld.__name__}."):
+    for pkg in candidate_pkgs:
+        if not unresolved:
+            break
+        if not hasattr(pkg, "__path__"):
+            continue
+        for mod_info in pkgutil.walk_packages(pkg.__path__, prefix=f"{pkg.__name__}."):
             if not unresolved:
                 break
             mod_name = mod_info.name
@@ -86,9 +124,12 @@ def _patch_lean_dojo_exports() -> None:
 
     still_missing = [name for name in missing if not hasattr(ld2, name)]
     if still_missing:
+        pkg_names = [pkg.__name__ for pkg in candidate_pkgs]
         raise RuntimeError(
             "Could not patch required Dojo symbols for BFSP: "
             + ", ".join(still_missing)
+            + ". Scanned packages: "
+            + ", ".join(pkg_names)
         )
 
 
@@ -330,6 +371,7 @@ def main() -> None:
         help="Directory for realtime JSONL events and per-theorem summaries.",
     )
     args = parser.parse_args()
+    _load_core_symbols()
 
     candidate_paths = []
     if args.dataset_path:
