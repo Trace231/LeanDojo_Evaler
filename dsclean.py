@@ -25,11 +25,12 @@ from lean_dojo_v2.trainer.sft_trainer import SFTTrainer
 logging.basicConfig(level=logging.INFO)
 
 # ── Config ────────────────────────────────────────────────────────────────
+# ── Config ────────────────────────────────────────────────────────────────
 MODEL_NAME = "deepseek-ai/DeepSeek-Prover-V2-7B"
 
-# 切换为标准的 miniF2F Lean 4 测试集
-URL = "https://github.com/amirlfe/miniF2F-lean4"
-COMMIT = "0351f045bb62768560ca9142b451d08e5c184cf4" # 请确保这是你本地能够成功 clone 并编译的 commit
+# 切换为正确的 miniF2F Lean 4 测试集
+URL = "https://github.com/yangky11/miniF2F-lean4"
+COMMIT = "v4.24.0"  # 使用稳定的发布版本 tag，或者你也可以去该仓库找最新的 40 位 commit hash
 
 LOCAL_PROJECT_PATH = None # 如果使用上面的远程仓库，设为 None 即可
 
