@@ -13,6 +13,8 @@ import importlib.util
 import json
 import math
 import re
+import sys
+import types
 from pathlib import Path
 from typing import List, Tuple
 
@@ -36,16 +38,43 @@ def _load_best_first_search_prover():
         import lean_dojo_v2
 
         pkg_root = Path(lean_dojo_v2.__file__).resolve().parent
-        proof_search_path = pkg_root / "lean_agent" / "prover" / "proof_search.py"
-        spec = importlib.util.spec_from_file_location(
-            "lean_dojo_v2.lean_agent.prover.proof_search_fallback",
-            str(proof_search_path),
-        )
-        if spec is None or spec.loader is None:
-            raise RuntimeError(f"Cannot load proof_search.py from {proof_search_path}")
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return mod.BestFirstSearchProver
+        prover_dir = pkg_root / "lean_agent" / "prover"
+        proof_search_path = prover_dir / "proof_search.py"
+        search_tree_path = prover_dir / "search_tree.py"
+
+        # Build a synthetic package to bypass broken prover/__init__.py.
+        prover_pkg_name = "lean_dojo_v2.lean_agent.prover"
+        if prover_pkg_name not in sys.modules:
+            prover_pkg = types.ModuleType(prover_pkg_name)
+            prover_pkg.__path__ = [str(prover_dir)]  # type: ignore[attr-defined]
+            sys.modules[prover_pkg_name] = prover_pkg
+
+        # Preload search_tree so proof_search can import it without touching __init__.py.
+        search_tree_mod_name = "lean_dojo_v2.lean_agent.prover.search_tree"
+        if search_tree_mod_name not in sys.modules:
+            st_spec = importlib.util.spec_from_file_location(
+                search_tree_mod_name, str(search_tree_path)
+            )
+            if st_spec is None or st_spec.loader is None:
+                raise RuntimeError(f"Cannot load search_tree.py from {search_tree_path}")
+            st_mod = importlib.util.module_from_spec(st_spec)
+            sys.modules[search_tree_mod_name] = st_mod
+            st_spec.loader.exec_module(st_mod)
+
+        proof_mod_name = "lean_dojo_v2.lean_agent.prover.proof_search"
+        if proof_mod_name not in sys.modules:
+            ps_spec = importlib.util.spec_from_file_location(
+                proof_mod_name, str(proof_search_path)
+            )
+            if ps_spec is None or ps_spec.loader is None:
+                raise RuntimeError(
+                    f"Cannot load proof_search.py from {proof_search_path}"
+                )
+            ps_mod = importlib.util.module_from_spec(ps_spec)
+            sys.modules[proof_mod_name] = ps_mod
+            ps_spec.loader.exec_module(ps_mod)
+
+        return sys.modules[proof_mod_name].BestFirstSearchProver
 
 
 _DECL_RE = re.compile(
@@ -217,7 +246,8 @@ def main() -> None:
     parser.add_argument(
         "--dataset_path",
         type=str,
-        default="data/leandojo_benchmark/random/test_sampled_50.json",
+        default=None,
+        help="Path to benchmark JSON. If omitted, common paths are auto-detected.",
     )
     parser.add_argument(
         "--model_name",
@@ -236,10 +266,33 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    data_path = Path(args.dataset_path)
-    if not data_path.exists():
-        raise FileNotFoundError(f"Dataset not found: {data_path}")
+    candidate_paths = []
+    if args.dataset_path:
+        candidate_paths.append(Path(args.dataset_path))
+    candidate_paths.extend(
+        [
+            Path("data/leandojo_benchmark/random/test_sampled_50.json"),
+            Path("data/leandojo_benchmark/random/test.json"),
+            Path("data/random/test_sampled_50.json"),
+            Path("data/random/test.json"),
+        ]
+    )
 
+    data_path = None
+    for p in candidate_paths:
+        if p.exists():
+            data_path = p
+            break
+
+    if data_path is None:
+        tried = "\n".join(f"  - {p}" for p in candidate_paths)
+        raise FileNotFoundError(
+            "Dataset not found. Tried:\n"
+            f"{tried}\n"
+            "Please pass --dataset_path explicitly."
+        )
+
+    print(f"Using dataset: {data_path}")
     with open(data_path) as f:
         dataset = json.load(f)
     if args.max_theorems > 0:
