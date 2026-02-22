@@ -139,24 +139,27 @@ def _repair_repo_cache_layout(repo) -> bool:
 
     if not base.exists():
         return False
+    if not normal.exists() and not with_deps.exists():
+        return False
+
+    import shutil
+
+    # If _d path exists as a symlink, replace it with a real directory copy.
+    if with_deps.is_symlink():
+        target = with_deps.resolve()
+        with_deps.unlink()
+        shutil.copytree(target, with_deps)
+        print(f"[cache-fix] replaced symlink with real dir copy: {with_deps}")
+        return True
+
+    # If _d path already exists as a real directory, leave it unchanged.
     if with_deps.exists():
         return False
-    if not normal.exists():
-        return False
 
-    try:
-        os.symlink(normal, with_deps, target_is_directory=True)
-        print(f"[cache-fix] created symlink: {with_deps} -> {normal}")
-        return True
-    except FileExistsError:
-        return True
-    except OSError:
-        # Fallback for filesystems where symlink may be disallowed.
-        import shutil
-
-        shutil.copytree(normal, with_deps)
-        print(f"[cache-fix] copied dir: {normal} -> {with_deps}")
-        return True
+    # Create a real directory copy instead of symlink to avoid subpath checks failing.
+    shutil.copytree(normal, with_deps)
+    print(f"[cache-fix] copied dir: {normal} -> {with_deps}")
+    return True
 
 
 def _import_site_package(pkg_name: str):
