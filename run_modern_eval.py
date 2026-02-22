@@ -3,7 +3,7 @@ import logging
 from lean_dojo_v2.agent.hf_agent import HFAgent
 from lean_dojo_v2.trainer.sft_trainer import SFTTrainer
 
-# 强制指定模型名称，防止它去空的 outputs 目录找
+# 强制模型名称
 MODEL_NAME = "deepseek-ai/DeepSeek-Prover-V2-7B"
 
 logging.basicConfig(level=logging.INFO)
@@ -15,18 +15,22 @@ class FullMathlibAgent(HFAgent):
     def _get_build_deps(self) -> bool:
         return True
 
-    # --- 关键覆盖：强制让 Prover 加载原始模型，而不是从 trainer.output_dir 加载 ---
+    # --- 修复后的 _setup_prover ---
     def _setup_prover(self):
         from lean_dojo_v2.prover.hf_prover import HFProver
-        # 这里直接传 MODEL_NAME，绕过 trainer 的输出路径
+        
+        # 使用 getattr 安全获取，如果没定义则返回 None
+        idx_theorems = getattr(self, "indexed_theorems", None)
+        
+        print(f"🚀 正在加载模型权重: {MODEL_NAME}")
         self.prover = HFProver(
             MODEL_NAME, 
-            indexed_theorems=self.indexed_theorems,
+            indexed_theorems=idx_theorems,
             tactic_state_fixed=True
         )
 
 def main():
-    # 既然已经提取过数据了，这里就不再清理 /tmp 了，直接利用之前的成果
+    # 之前已经跑完了 1614 文件，千万不要删缓存！
     # os.system("rm -rf /tmp/tmp*") 
 
     trainer = SFTTrainer(
@@ -36,11 +40,9 @@ def main():
         batch_size=8 
     )
 
-    # 实例化我们修改后的 Agent
     agent = FullMathlibAgent(trainer=trainer)
 
-    print("⏳ [阶段 1] 正在检查/构建环境...")
-    # 因为你之前已经跑到了 1613/1614，这一步会非常快（直接命中缓存）
+    print("⏳ [阶段 1] 检查环境（数据已提取，将秒过）...")
     agent.setup_github_repository(url=url, commit=commit)
 
     print("🔥 [阶段 2] 环境就绪！启动 DeepSeek 进行证明搜索...")
@@ -48,7 +50,7 @@ def main():
     
     # 启动推理
     agent.prove()
-    print("✅ 搜索完毕！")
+    print("✅ 任务完成！")
 
 if __name__ == "__main__":
     main()
