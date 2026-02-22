@@ -495,13 +495,30 @@ class DeepSeekGenerator:
         self,
         model_name: str,
         num_return_sequences: int,
+        dtype: str = "bf16",
         temperature: float = 0.7,
         top_p: float = 0.9,
         max_new_tokens: int = 64,
     ) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)
+        dtype_map = {
+            "fp32": torch.float32,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }
+        if dtype not in dtype_map:
+            raise ValueError(f"Unsupported dtype: {dtype}. Use fp32/fp16/bf16.")
+        self.dtype = dtype
+        torch_dtype = dtype_map[dtype]
+        if self.device.type != "cuda":
+            # Keep CPU path stable.
+            torch_dtype = torch.float32
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch_dtype,
+            low_cpu_mem_usage=True,
+        ).to(self.device)
         self.model.eval()
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
@@ -588,6 +605,13 @@ def main() -> None:
     parser.add_argument("--num_sampled_tactics", type=int, default=5)
     parser.add_argument("--max_theorems", type=int, default=50)
     parser.add_argument(
+        "--dtype",
+        type=str,
+        default="bf16",
+        choices=["fp32", "fp16", "bf16"],
+        help="Model weight dtype. bf16 is recommended on A100.",
+    )
+    parser.add_argument(
         "--analysis_event_dir",
         type=str,
         default="logs/search_events",
@@ -633,6 +657,7 @@ def main() -> None:
     gen = DeepSeekGenerator(
         model_name=args.model_name,
         num_return_sequences=max(2, args.num_sampled_tactics),
+        dtype=args.dtype,
     )
     prover_kwargs = dict(
         tac_gen=gen,
