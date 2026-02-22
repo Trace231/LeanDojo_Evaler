@@ -30,9 +30,10 @@ def main():
     # 2. 实例化 Agent
     agent = FullMathlibAgent(trainer=trainer)
 
-    # 🌟 [关键一步] 手动覆盖 checkpoint 路径
-    # 这会强制 Prover 去加载原始模型，而不是去空的 outputs-deepseek 文件夹寻找
-    agent.checkpoint = MODEL_NAME 
+    # 🌟 [关键一步] 覆盖 output_dir 为原始模型路径
+    # _setup_prover() 用 self.output_dir 作为 HFProver 的 ckpt_path
+    # 不覆盖的话会去找空的 "outputs-deepseek" 文件夹
+    agent.output_dir = MODEL_NAME
 
     print("⏳ [阶段 1] 正在检查/构建环境...")
     agent.setup_github_repository(url=url, commit=commit)
