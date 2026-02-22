@@ -39,6 +39,10 @@ MODEL_NAME = "deepseek-ai/DeepSeek-Prover-V2-7B"
 URL = "https://github.com/durant42040/lean4-example"
 COMMIT = "005de00d03f1aaa32cb2923d5e3cbaf0b954a192"
 
+# Local path to the v4.26.0 rebuild (bypasses old cached v4.21.0 trace)
+# Set to None to use the default LeanDojo cache (requires matching Lean versions)
+LOCAL_PROJECT_PATH = "/tmp/lean4-example"
+
 LOG_DIR = Path("logs/search_trees")
 MAX_STEPS = 100
 MAX_TRIALS_PER_GOAL = 5
@@ -348,12 +352,15 @@ def main():
         print(f"[{i+1}/{len(sorry_theorems)}] {theorem.full_name}")
 
         # Create a REAL Pantograph server with full project context
-        # (imports the theorem's file so all local variables are in scope)
-        traced_repo_path = get_traced_repo_path(repo, build_deps=True)
+        # Use LOCAL_PROJECT_PATH (v4.26.0 build) to bypass cached v4.21.0 trace
+        if LOCAL_PROJECT_PATH:
+            project_path = Path(LOCAL_PROJECT_PATH)
+        else:
+            project_path = get_traced_repo_path(repo, build_deps=True)
         try:
             server = Server(
                 imports=["Init", str(theorem.file_path).replace(".lean", "")],
-                project_path=traced_repo_path,
+                project_path=project_path,
             )
         except Exception as e:
             print(f"  Server init failed: {e}")
