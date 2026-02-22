@@ -64,13 +64,33 @@ def _flatten_tree(
             "order_of_expansion": node.get("order_of_expansion", -1),
             "error_message": node.get("error_message"),
             "path_from_root": list(path_from_root),
+            "is_circular_ref": False,
         }
     )
 
     children = node.get("children", [])
     for child in children:
         if isinstance(child, str):
-            # "<circular_ref>" sentinel — skip
+            # Preserve circular-ref sentinels as explicit rows so downstream
+            # analysis can filter them deterministically.
+            records.append(
+                {
+                    "theorem_name": theorem_name,
+                    "node_id": len(records),
+                    "parent_id": node_id,
+                    "node_type": "CircularRefNode",
+                    "state_text": "<circular_ref>",
+                    "tactic": None,
+                    "step_logprob": np.nan,
+                    "cumulative_logprob": np.nan,
+                    "depth": node.get("depth", 0) + 1,
+                    "ppl": np.nan,
+                    "order_of_expansion": -2,
+                    "error_message": None,
+                    "path_from_root": list(path_from_root) + [node_id],
+                    "is_circular_ref": True,
+                }
+            )
             continue
         _flatten_tree(
             child,
@@ -81,6 +101,18 @@ def _flatten_tree(
         )
 
     return node_id
+
+
+def _filter_analysis_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop circular-ref placeholders and invalid numeric rows for analysis."""
+    if df.empty:
+        return df
+    out = df.copy()
+    if "is_circular_ref" in out.columns:
+        out = out[~out["is_circular_ref"].fillna(False)]
+    if "node_type" in out.columns:
+        out = out[out["node_type"] != "CircularRefNode"]
+    return out
 
 
 def load_all_trees(input_dir: str) -> Tuple[pd.DataFrame, List[dict]]:
@@ -146,7 +178,7 @@ def mark_success_paths(df: pd.DataFrame, meta_list: List[dict]) -> pd.DataFrame:
         if meta["status"] != "Proved":
             continue
         thm = meta["theorem_name"]
-        sub = df[df["theorem_name"] == thm]
+        sub = df[(df["theorem_name"] == thm) & (~df["is_circular_ref"].fillna(False))]
 
         # Find all ProofFinishedNode leaves
         pf_nodes = sub[sub["node_type"] == "ProofFinishedNode"]
@@ -323,7 +355,9 @@ def efficiency_statistics(meta_list: List[dict], out_dir: Path) -> None:
 
 def _collect_paths(df: pd.DataFrame, theorem_name: str) -> List[pd.DataFrame]:
     """Return a list of DataFrames, one per root-to-leaf path."""
-    sub = df[df["theorem_name"] == theorem_name].copy()
+    sub = df[
+        (df["theorem_name"] == theorem_name) & (~df["is_circular_ref"].fillna(False))
+    ].copy()
     leaves = sub[
         (sub["node_type"].isin(["ProofFinishedNode", "ErrorNode"]))
         | (sub["order_of_expansion"] == -1)  # unexplored InternalNode
@@ -470,7 +504,7 @@ def compute_mislead_indices(
     meta_list: List[dict],
     gt: Dict[str, float],
     out_dir: Path,
-) -> None:
+) -> pd.DataFrame:
     report_lines = ["=" * 60, "MISLEAD INDEX REPORT", "=" * 60]
     records = []
 
@@ -494,7 +528,9 @@ def compute_mislead_indices(
     report_lines.append("  Delta ~ 0  =>  fail branches scored similarly to the proof")
     report_lines.append("  Delta < 0  =>  model correctly preferred the proof path")
     for thm in sorted(proved_thms):
-        sub = df[df["theorem_name"] == thm]
+        sub = df[
+            (df["theorem_name"] == thm) & (~df["is_circular_ref"].fillna(False))
+        ]
         success_path = sub[sub["on_success_path"]]
         fail_branches = sub[(~sub["on_success_path"]) & (sub["node_type"] != "InternalNode")]
 
@@ -536,7 +572,9 @@ def compute_mislead_indices(
             if thm not in gt:
                 continue
             gt_cum_lp = gt[thm]
-            sub = df[(df["theorem_name"] == thm)]
+            sub = df[
+                (df["theorem_name"] == thm) & (~df["is_circular_ref"].fillna(False))
+            ]
             if sub.empty:
                 continue
             max_fail_cum_lp = sub["cumulative_logprob"].max()
@@ -569,7 +607,11 @@ def compute_mislead_indices(
         report_lines.append("  [No proved theorems available to build baseline; skipping.]")
     else:
         for thm in sorted(failed_thms):
-            sub = df[(df["theorem_name"] == thm) & (df["depth"] > 0)]
+            sub = df[
+                (df["theorem_name"] == thm)
+                & (df["depth"] > 0)
+                & (~df["is_circular_ref"].fillna(False))
+            ]
             if sub.empty:
                 continue
 
@@ -618,8 +660,14 @@ def _status_map(meta_list: List[dict]) -> Dict[str, str]:
 
 def _collect_leaf_nodes(df: pd.DataFrame) -> pd.DataFrame:
     leaves = df[
-        (df["node_type"].isin(["ProofFinishedNode", "ErrorNode"]))
-        | ((df["node_type"] == "InternalNode") & (df["order_of_expansion"] == -1))
+        (~df["is_circular_ref"].fillna(False))
+        & (
+            (df["node_type"].isin(["ProofFinishedNode", "ErrorNode"]))
+            | (
+                (df["node_type"] == "InternalNode")
+                & (df["order_of_expansion"] == -1)
+            )
+        )
     ].copy()
     leaves["leaf_kind"] = np.where(
         leaves["node_type"] == "ProofFinishedNode",
@@ -715,7 +763,11 @@ def leaf_level_analysis(df: pd.DataFrame, meta_list: List[dict], out_dir: Path) 
 
 def priority_evolution_analysis(df: pd.DataFrame, meta_list: List[dict], out_dir: Path) -> None:
     status_by_theorem = _status_map(meta_list)
-    explored = df[(df["node_type"] == "InternalNode") & (df["order_of_expansion"] > 0)].copy()
+    explored = df[
+        (~df["is_circular_ref"].fillna(False))
+        & (df["node_type"] == "InternalNode")
+        & (df["order_of_expansion"] > 0)
+    ].copy()
     if explored.empty:
         (out_dir / "priority_evolution_report.txt").write_text("No explored internal nodes found.")
         return
@@ -758,7 +810,27 @@ def priority_evolution_analysis(df: pd.DataFrame, meta_list: List[dict], out_dir
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()
-    fig.savefig(out_dir / "priority_evolution_aggregate.png", dpi=150)
+    fig.savefig(out_dir / "priority_evolution_aggregate_mean.png", dpi=150)
+    plt.close(fig)
+
+    # Aggregate by expansion order (sum): reflects total accumulated frontier quality.
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for label, grp in [
+        ("All", explored),
+        ("Proved", explored[explored["theorem_status"] == "Proved"]),
+        ("Failed/Open", explored[explored["theorem_status"] != "Proved"]),
+    ]:
+        if grp.empty:
+            continue
+        agg = grp.groupby("order_of_expansion")["cumulative_logprob"].sum().sort_index()
+        ax.plot(agg.index, agg.values, label=label, linewidth=2)
+    ax.set_title("Aggregate priority evolution (sum)")
+    ax.set_xlabel("order_of_expansion")
+    ax.set_ylabel("sum priority (= sum cumulative_logprob)")
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(out_dir / "priority_evolution_aggregate_sum.png", dpi=150)
     plt.close(fig)
 
 
@@ -819,7 +891,9 @@ def root_cause_analysis(
     report_lines.append("\n--- Confident-Hallucination Errors ---")
     report_lines.append("(ErrorNode with cumulative_logprob > -1.0, i.e. near 0)")
 
-    error_nodes = df[df["node_type"] == "ErrorNode"].copy()
+    error_nodes = df[
+        (~df["is_circular_ref"].fillna(False)) & (df["node_type"] == "ErrorNode")
+    ].copy()
     if not error_nodes.empty:
         confident_errors = error_nodes[error_nodes["cumulative_logprob"] > -1.0]
         confident_errors = confident_errors.sort_values(
@@ -849,6 +923,7 @@ def root_cause_analysis(
     for thm in sorted(failed_thms):
         sub = df[
             (df["theorem_name"] == thm)
+            & (~df["is_circular_ref"].fillna(False))
             & (df["node_type"] == "InternalNode")
             & (df["order_of_expansion"] > 0)
         ].sort_values("order_of_expansion", ascending=False)
@@ -874,6 +949,8 @@ def root_cause_analysis(
     # ---- 6d. Frontier scatter plot ----
     if not df.empty:
         explored = df[
+            (~df["is_circular_ref"].fillna(False))
+            &
             (df["node_type"] == "InternalNode") & (df["order_of_expansion"] > 0)
         ]
         if not explored.empty:
@@ -941,8 +1018,12 @@ def main():
         print("No data to analyse. Exiting.")
         return
 
-    # --- Mark success paths ---
+    # --- Keep raw for debugging, and filtered for analysis ---
+    df_raw = df.copy()
+    df = _filter_analysis_df(df)
     df = mark_success_paths(df, meta_list)
+    if not df_raw.empty:
+        df_raw.to_csv(out_dir / "all_nodes_raw.csv", index=False)
 
     # --- Save flattened data ---
     df.to_csv(out_dir / "all_nodes.csv", index=False)

@@ -420,12 +420,16 @@ _DECL_RE = re.compile(
     r"^(theorem|lemma|def|example|private\s+theorem|private\s+lemma)\s+"
 )
 _BY_RE = re.compile(r"\bby\b\s*(.*)", re.DOTALL)
+_COMMENT_PREFIX_RE = re.compile(r"^\s*--")
 
 
 def _clean_tactic(raw: str) -> str:
-    tactic = raw.strip().split("\n")[0].split("<;>")[0].strip()
+    tactic = raw.strip().split("\n")[0].strip()
+    if _COMMENT_PREFIX_RE.match(tactic):
+        return ""
     tactic = re.sub(r"^```\w*\s*", "", tactic)
     tactic = re.sub(r"\s*```$", "", tactic)
+    tactic = re.sub(r"\s*--.*$", "", tactic).strip()
     if len(tactic) >= 2 and tactic[0] == tactic[-1] and tactic[0] in "`\"'":
         tactic = tactic[1:-1]
     if _DECL_RE.match(tactic):
@@ -435,7 +439,11 @@ def _clean_tactic(raw: str) -> str:
         tactic = m.group(1).strip()
     if tactic.startswith("by "):
         tactic = tactic[3:].strip()
+    if tactic.endswith(" by"):
+        tactic = tactic[:-3].strip()
     if tactic in ("", "sorry", "admit"):
+        return ""
+    if len(tactic) > 220:
         return ""
     return tactic
 
@@ -443,15 +451,18 @@ def _clean_tactic(raw: str) -> str:
 def _build_prompt(goal_str: str) -> str:
     return (
         "### System:\n"
-        "You are a Lean 4 tactic generator.\n"
-        "Given a proof goal state, output exactly ONE tactic that makes progress.\n"
-        "CRITICAL RULES:\n"
-        "- Output ONLY the tactic text (e.g., 'simp', 'ring', 'exact h').\n"
-        "- Do NOT output theorem/lemma/def declarations.\n"
-        "- Do NOT wrap in code fences, quotes, or markdown.\n"
-        "- Do NOT write 'by' before the tactic.\n"
-        "- Single line only. No semicolons, no multi-step combinator.\n"
-        "- Never use 'sorry' or 'admit'.\n"
+        "You are a Lean 4 tactic generator for interactive proof search.\n"
+        "Given a Lean goal state, output exactly ONE executable Lean tactic line.\n"
+        "Rules:\n"
+        "1) Output only tactic text (no explanation, no markdown, no code fences).\n"
+        "2) Do not output theorem/lemma/def/example declarations.\n"
+        "3) Do not output `by`, `sorry`, `admit`, or comments.\n"
+        "4) One line only. Keep it concise and parseable.\n"
+        "5) Prefer robust tactics that often make progress:\n"
+        "   `simp`, `simp_all`, `aesop`, `linarith`, `nlinarith`, `omega`,\n"
+        "   `ring`, `field_simp`, `norm_num`, `tauto`, `exact ?_`, `apply ?_`, `refine ?_`.\n"
+        "6) Use names/hypotheses that appear in the current context; avoid guessing constants.\n"
+        "7) If uncertain, return a safe generic tactic like `simp` or `aesop`.\n"
         "### User:\n"
         f"{goal_str}\n\n"
         "### Assistant:\n"
@@ -499,6 +510,7 @@ class DeepSeekGenerator:
         temperature: float = 0.7,
         top_p: float = 0.9,
         max_new_tokens: int = 64,
+        repetition_penalty: float = 1.05,
     ) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -527,6 +539,7 @@ class DeepSeekGenerator:
         self.temperature = temperature
         self.top_p = top_p
         self.max_new_tokens = max_new_tokens
+        self.repetition_penalty = repetition_penalty
 
     def generate(
         self,
@@ -550,6 +563,7 @@ class DeepSeekGenerator:
                 do_sample=True,
                 temperature=self.temperature,
                 top_p=self.top_p,
+                repetition_penalty=self.repetition_penalty,
                 pad_token_id=self.tokenizer.pad_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
             )
@@ -603,6 +617,17 @@ def main() -> None:
     parser.add_argument("--timeout", type=int, default=600)
     parser.add_argument("--max_expansions", type=int, default=256)
     parser.add_argument("--num_sampled_tactics", type=int, default=5)
+    parser.add_argument(
+        "--num_return_sequences",
+        type=int,
+        default=0,
+        help="Raw number of model samples before dedup/filter. "
+        "0 means auto (max(8, 2 * num_sampled_tactics)).",
+    )
+    parser.add_argument("--temperature", type=float, default=0.8)
+    parser.add_argument("--top_p", type=float, default=0.95)
+    parser.add_argument("--max_new_tokens", type=int, default=96)
+    parser.add_argument("--repetition_penalty", type=float, default=1.05)
     parser.add_argument("--max_theorems", type=int, default=50)
     parser.add_argument(
         "--dtype",
@@ -656,8 +681,16 @@ def main() -> None:
 
     gen = DeepSeekGenerator(
         model_name=args.model_name,
-        num_return_sequences=max(2, args.num_sampled_tactics),
+        num_return_sequences=(
+            args.num_return_sequences
+            if args.num_return_sequences > 0
+            else max(8, args.num_sampled_tactics * 2)
+        ),
         dtype=args.dtype,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        max_new_tokens=args.max_new_tokens,
+        repetition_penalty=args.repetition_penalty,
     )
     prover_kwargs = dict(
         tac_gen=gen,
