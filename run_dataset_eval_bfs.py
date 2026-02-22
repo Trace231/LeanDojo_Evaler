@@ -9,6 +9,7 @@ This script follows framework constraints strictly:
 """
 
 import argparse
+import importlib.util
 import json
 import math
 import re
@@ -19,8 +20,32 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from lean_dojo_v2.lean_agent.generator.model import TacticGenerator
-from lean_dojo_v2.lean_agent.prover.proof_search import BestFirstSearchProver
 from lean_dojo_v2.lean_dojo import LeanGitRepo, Pos, Theorem
+
+
+def _load_best_first_search_prover():
+    """Load BestFirstSearchProver with a fallback for broken prover __init__.py."""
+    try:
+        from lean_dojo_v2.lean_agent.prover.proof_search import BestFirstSearchProver
+
+        return BestFirstSearchProver
+    except ModuleNotFoundError as ex:
+        if "lean_dojo_v2.lean_agent.prover.evaluate" not in str(ex):
+            raise
+
+        import lean_dojo_v2
+
+        pkg_root = Path(lean_dojo_v2.__file__).resolve().parent
+        proof_search_path = pkg_root / "lean_agent" / "prover" / "proof_search.py"
+        spec = importlib.util.spec_from_file_location(
+            "lean_dojo_v2.lean_agent.prover.proof_search_fallback",
+            str(proof_search_path),
+        )
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"Cannot load proof_search.py from {proof_search_path}")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.BestFirstSearchProver
 
 
 _DECL_RE = re.compile(
@@ -219,6 +244,8 @@ def main() -> None:
         dataset = json.load(f)
     if args.max_theorems > 0:
         dataset = dataset[: args.max_theorems]
+
+    BestFirstSearchProver = _load_best_first_search_prover()
 
     gen = DeepSeekGenerator(
         model_name=args.model_name,
