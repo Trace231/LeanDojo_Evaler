@@ -603,6 +603,183 @@ def compute_mislead_indices(
     if records:
         mi_df = pd.DataFrame(records)
         mi_df.to_csv(out_dir / "mislead_indices.csv", index=False)
+        return mi_df
+    return pd.DataFrame()
+
+
+# ---------------------------------------------------------------------------
+# 5.5 Leaf-level distributions + priority evolution
+# ---------------------------------------------------------------------------
+
+
+def _status_map(meta_list: List[dict]) -> Dict[str, str]:
+    return {m["theorem_name"]: m["status"] for m in meta_list}
+
+
+def _collect_leaf_nodes(df: pd.DataFrame) -> pd.DataFrame:
+    leaves = df[
+        (df["node_type"].isin(["ProofFinishedNode", "ErrorNode"]))
+        | ((df["node_type"] == "InternalNode") & (df["order_of_expansion"] == -1))
+    ].copy()
+    leaves["leaf_kind"] = np.where(
+        leaves["node_type"] == "ProofFinishedNode",
+        "proof_finished",
+        np.where(leaves["node_type"] == "ErrorNode", "error_leaf", "open_leaf"),
+    )
+    return leaves
+
+
+def leaf_level_analysis(df: pd.DataFrame, meta_list: List[dict], out_dir: Path) -> None:
+    status_by_theorem = _status_map(meta_list)
+    leaves = _collect_leaf_nodes(df)
+    if leaves.empty:
+        (out_dir / "leaf_level_report.txt").write_text("No leaf nodes found.")
+        return
+
+    leaves["theorem_status"] = leaves["theorem_name"].map(status_by_theorem).fillna("Unknown")
+    leaves.to_csv(out_dir / "leaf_nodes.csv", index=False)
+
+    # Per-theorem leaf stats
+    per_thm = (
+        leaves.groupby("theorem_name")
+        .agg(
+            theorem_status=("theorem_status", "first"),
+            num_leaf_nodes=("node_id", "count"),
+            leaf_cum_lp_mean=("cumulative_logprob", "mean"),
+            leaf_cum_lp_median=("cumulative_logprob", "median"),
+            leaf_cum_lp_p90=("cumulative_logprob", lambda s: np.quantile(s, 0.9)),
+            leaf_ppl_mean=("ppl", "mean"),
+            leaf_ppl_median=("ppl", "median"),
+            leaf_ppl_p90=("ppl", lambda s: np.quantile(s.dropna(), 0.9) if len(s.dropna()) > 0 else np.nan),
+        )
+        .reset_index()
+    )
+    per_thm.to_csv(out_dir / "leaf_density_summary.csv", index=False)
+
+    # Per-theorem plots
+    per_thm_dir = out_dir / "leaf_density_per_theorem"
+    per_thm_dir.mkdir(parents=True, exist_ok=True)
+    for thm, grp in leaves.groupby("theorem_name"):
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+        ax1.hist(grp["cumulative_logprob"].dropna(), bins=30, density=True, alpha=0.75)
+        ax1.set_title(f"{thm} | leaf cumulative log-prob")
+        ax1.set_xlabel("cumulative_logprob")
+        ax1.set_ylabel("density")
+        ax1.grid(True, alpha=0.3)
+
+        ppl_vals = grp["ppl"].dropna()
+        if not ppl_vals.empty:
+            ax2.hist(ppl_vals, bins=30, density=True, alpha=0.75)
+        ax2.set_title(f"{thm} | leaf PPL")
+        ax2.set_xlabel("ppl")
+        ax2.set_ylabel("density")
+        ax2.grid(True, alpha=0.3)
+        fig.tight_layout()
+        safe_name = thm.replace("/", "_").replace("\\", "_").replace(".", "_")
+        fig.savefig(per_thm_dir / f"{safe_name}.png", dpi=140)
+        plt.close(fig)
+
+    # Aggregate plots: combined + split by theorem status
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    groups = [
+        ("All", leaves),
+        ("Proved", leaves[leaves["theorem_status"] == "Proved"]),
+        ("Failed/Open", leaves[leaves["theorem_status"] != "Proved"]),
+        ("ProofFinished leaves only", leaves[leaves["leaf_kind"] == "proof_finished"]),
+    ]
+    for ax, (title, grp) in zip(axes.flatten(), groups):
+        vals = grp["cumulative_logprob"].dropna()
+        if not vals.empty:
+            ax.hist(vals, bins=40, density=True, alpha=0.75)
+        ax.set_title(title)
+        ax.set_xlabel("leaf cumulative_logprob")
+        ax.set_ylabel("density")
+        ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_dir / "leaf_cumlp_density_aggregate.png", dpi=150)
+    plt.close(fig)
+
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    for ax, (title, grp) in zip(axes.flatten(), groups):
+        vals = grp["ppl"].dropna()
+        if not vals.empty:
+            ax.hist(vals, bins=40, density=True, alpha=0.75)
+        ax.set_title(title)
+        ax.set_xlabel("leaf ppl")
+        ax.set_ylabel("density")
+        ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_dir / "leaf_ppl_density_aggregate.png", dpi=150)
+    plt.close(fig)
+
+
+def priority_evolution_analysis(df: pd.DataFrame, meta_list: List[dict], out_dir: Path) -> None:
+    status_by_theorem = _status_map(meta_list)
+    explored = df[(df["node_type"] == "InternalNode") & (df["order_of_expansion"] > 0)].copy()
+    if explored.empty:
+        (out_dir / "priority_evolution_report.txt").write_text("No explored internal nodes found.")
+        return
+    explored["theorem_status"] = explored["theorem_name"].map(status_by_theorem).fillna("Unknown")
+
+    # Save expanded-node table
+    explored.rename(columns={"cumulative_logprob": "priority"}).to_csv(
+        out_dir / "priority_evolution_points.csv", index=False
+    )
+
+    per_thm_dir = out_dir / "priority_evolution_per_theorem"
+    per_thm_dir.mkdir(parents=True, exist_ok=True)
+    for thm, grp in explored.groupby("theorem_name"):
+        grp = grp.sort_values("order_of_expansion")
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.plot(grp["order_of_expansion"], grp["cumulative_logprob"], marker="o", markersize=2, linewidth=1)
+        ax.set_title(f"{thm} | priority evolution")
+        ax.set_xlabel("order_of_expansion")
+        ax.set_ylabel("priority (= cumulative_logprob)")
+        ax.grid(True, alpha=0.3)
+        fig.tight_layout()
+        safe_name = thm.replace("/", "_").replace("\\", "_").replace(".", "_")
+        fig.savefig(per_thm_dir / f"{safe_name}.png", dpi=140)
+        plt.close(fig)
+
+    # Aggregate evolution
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for label, grp in [
+        ("All", explored),
+        ("Proved", explored[explored["theorem_status"] == "Proved"]),
+        ("Failed/Open", explored[explored["theorem_status"] != "Proved"]),
+    ]:
+        if grp.empty:
+            continue
+        agg = grp.groupby("order_of_expansion")["cumulative_logprob"].mean().sort_index()
+        ax.plot(agg.index, agg.values, label=label, linewidth=2)
+    ax.set_title("Aggregate priority evolution")
+    ax.set_xlabel("order_of_expansion")
+    ax.set_ylabel("mean priority (= cumulative_logprob)")
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(out_dir / "priority_evolution_aggregate.png", dpi=150)
+    plt.close(fig)
+
+
+def mislead_density_plots(mi_df: pd.DataFrame, out_dir: Path) -> None:
+    if mi_df is None or mi_df.empty:
+        (out_dir / "mislead_density_report.txt").write_text("No mislead index records found.")
+        return
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4))
+    for ax, idx_type in zip(axes, ["branch", "global_A", "global_B"]):
+        vals = mi_df[mi_df["index_type"] == idx_type]["mislead_index"].dropna()
+        if not vals.empty:
+            ax.hist(vals, bins=40, density=True, alpha=0.8)
+        ax.axvline(0.0, color="black", linestyle="--", linewidth=1)
+        ax.set_title(f"MI density: {idx_type}")
+        ax.set_xlabel("mislead_index (Delta)")
+        ax.set_ylabel("density")
+        ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_dir / "mislead_indices_density.png", dpi=150)
+    plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
@@ -777,7 +954,10 @@ def main():
     plot_evolution(df, meta_list, out_dir)
 
     gt = load_ground_truth(args.ground_truth)
-    compute_mislead_indices(df, meta_list, gt, out_dir)
+    mi_df = compute_mislead_indices(df, meta_list, gt, out_dir)
+    leaf_level_analysis(df, meta_list, out_dir)
+    priority_evolution_analysis(df, meta_list, out_dir)
+    mislead_density_plots(mi_df, out_dir)
     root_cause_analysis(df, meta_list, out_dir)
 
     print(f"\nAll outputs written to {out_dir}/")
