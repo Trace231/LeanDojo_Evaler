@@ -25,8 +25,55 @@ from lean_dojo_v2.lean_agent.generator.model import TacticGenerator
 from lean_dojo_v2.lean_dojo import LeanGitRepo, Pos, Theorem
 
 
+def _patch_lean_dojo_exports() -> None:
+    """
+    Some lean_dojo_v2 builds expose tracing symbols only, while BFSP modules expect
+    runtime Dojo symbols on `lean_dojo_v2.lean_dojo`. Patch them from `lean_dojo`.
+    """
+    import lean_dojo_v2.lean_dojo as ld2
+
+    required = [
+        "Dojo",
+        "DojoCrashError",
+        "DojoInitError",
+        "DojoTacticTimeoutError",
+        "LeanError",
+        "ProofFinished",
+        "ProofGivenUp",
+        "TacticState",
+        "LeanGitRepo",
+        "Pos",
+        "Theorem",
+    ]
+    missing = [name for name in required if not hasattr(ld2, name)]
+    if not missing:
+        return
+
+    try:
+        import lean_dojo as ld
+    except Exception as ex:
+        raise RuntimeError(
+            "Current lean_dojo_v2 package lacks runtime Dojo symbols needed by "
+            "BestFirstSearchProver, and fallback import from `lean_dojo` failed. "
+            "Please install a compatible lean_dojo runtime package."
+        ) from ex
+
+    still_missing = []
+    for name in missing:
+        if hasattr(ld, name):
+            setattr(ld2, name, getattr(ld, name))
+        else:
+            still_missing.append(name)
+    if still_missing:
+        raise RuntimeError(
+            "Could not patch required Dojo symbols for BFSP: "
+            + ", ".join(still_missing)
+        )
+
+
 def _load_best_first_search_prover():
     """Load BestFirstSearchProver with a fallback for broken prover __init__.py."""
+    _patch_lean_dojo_exports()
     try:
         from lean_dojo_v2.lean_agent.prover.proof_search import BestFirstSearchProver
 
