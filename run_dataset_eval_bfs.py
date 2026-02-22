@@ -183,8 +183,7 @@ def _patch_lean_dojo_exports() -> None:
 
     candidate_pkgs = []
     import lean_dojo_v2 as ld2_root
-
-    candidate_pkgs.append(ld2_root)
+    ld = None
     try:
         import lean_dojo as ld
 
@@ -194,11 +193,13 @@ def _patch_lean_dojo_exports() -> None:
             # Local repository's lean_dojo package shadows installed runtime package.
             ld = _import_site_package("lean_dojo")
         if ld is not None:
+            # Prefer lean_dojo runtime symbols when available.
             candidate_pkgs.append(ld)
     except Exception:
         ld = _import_site_package("lean_dojo")
         if ld is not None:
             candidate_pkgs.append(ld)
+    candidate_pkgs.append(ld2_root)
 
     resolved = {}
 
@@ -235,6 +236,15 @@ def _patch_lean_dojo_exports() -> None:
     for name, obj in resolved.items():
         if _is_valid_symbol(name, obj):
             setattr(ld2, name, obj)
+
+    # Enforce runtime consistency: if Dojo comes from lean_dojo, use the same
+    # package's LeanGitRepo/Pos/Theorem to avoid cross-package type mismatch.
+    if ld is not None:
+        for sym in ("LeanGitRepo", "Pos", "Theorem"):
+            if hasattr(ld, sym):
+                obj = getattr(ld, sym)
+                if _is_valid_symbol(sym, obj):
+                    setattr(ld2, sym, obj)
 
     still_missing = [
         name
