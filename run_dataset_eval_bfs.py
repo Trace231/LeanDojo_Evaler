@@ -13,6 +13,7 @@ import importlib.util
 import inspect
 import json
 import math
+import pkgutil
 import re
 import sys
 import types
@@ -58,12 +59,32 @@ def _patch_lean_dojo_exports() -> None:
             "Please install a compatible lean_dojo runtime package."
         ) from ex
 
-    still_missing = []
+    resolved = {}
+    # First try top-level lean_dojo exports.
     for name in missing:
         if hasattr(ld, name):
-            setattr(ld2, name, getattr(ld, name))
-        else:
-            still_missing.append(name)
+            resolved[name] = getattr(ld, name)
+
+    # Then recursively scan submodules for unresolved symbols.
+    unresolved = [name for name in missing if name not in resolved]
+    if unresolved and hasattr(ld, "__path__"):
+        for mod_info in pkgutil.walk_packages(ld.__path__, prefix=f"{ld.__name__}."):
+            if not unresolved:
+                break
+            mod_name = mod_info.name
+            try:
+                mod = __import__(mod_name, fromlist=["*"])
+            except Exception:
+                continue
+            for name in list(unresolved):
+                if hasattr(mod, name):
+                    resolved[name] = getattr(mod, name)
+                    unresolved.remove(name)
+
+    for name, obj in resolved.items():
+        setattr(ld2, name, obj)
+
+    still_missing = [name for name in missing if not hasattr(ld2, name)]
     if still_missing:
         raise RuntimeError(
             "Could not patch required Dojo symbols for BFSP: "
