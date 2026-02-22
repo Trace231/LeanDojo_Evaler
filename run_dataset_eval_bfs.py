@@ -477,6 +477,8 @@ def _build_prompt(
         "- Do NOT write 'by' before the tactic.\n"
         "- Single line only. No semicolons, no multi-step combinator.\n"
         "- Never use 'sorry' or 'admit'.\n"
+        "- Prefer short executable tactics over long guessed expressions.\n"
+        "- Avoid inventing constants/lemmas that may be out of scope.\n"
         "### User:\n"
         f"{history_block}"
         f"{goal_str}\n\n"
@@ -526,6 +528,7 @@ class DeepSeekGenerator:
         top_p: float = 0.9,
         max_new_tokens: int = 64,
         repetition_penalty: float = 1.05,
+        use_fallback_tactics: bool = True,
     ) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -555,6 +558,15 @@ class DeepSeekGenerator:
         self.top_p = top_p
         self.max_new_tokens = max_new_tokens
         self.repetition_penalty = repetition_penalty
+        self.use_fallback_tactics = use_fallback_tactics
+        self.fallback_tactics = [
+            "simp",
+            "aesop",
+            "simp_all",
+            "rfl",
+            "assumption",
+            "tauto",
+        ]
 
     def generate(
         self,
@@ -599,6 +611,15 @@ class DeepSeekGenerator:
             seen.add(tactic)
             lp = _step_logprob(self.model, self.tokenizer, prompt, tactic, self.device)
             pairs.append((tactic, lp))
+
+        # Keep BFS alive when model outputs collapse to unusable tactics.
+        if self.use_fallback_tactics:
+            for tac in self.fallback_tactics:
+                if tac in seen:
+                    continue
+                seen.add(tac)
+                lp = _step_logprob(self.model, self.tokenizer, prompt, tac, self.device)
+                pairs.append((tac, lp - 0.15))
 
         # BestFirstSearchProver expects better tactics first (larger logprob first).
         pairs.sort(key=lambda x: x[1], reverse=True)
@@ -647,8 +668,13 @@ def main() -> None:
     )
     parser.add_argument("--temperature", type=float, default=0.8)
     parser.add_argument("--top_p", type=float, default=0.95)
-    parser.add_argument("--max_new_tokens", type=int, default=96)
+    parser.add_argument("--max_new_tokens", type=int, default=64)
     parser.add_argument("--repetition_penalty", type=float, default=1.05)
+    parser.add_argument(
+        "--disable_fallback_tactics",
+        action="store_true",
+        help="Disable built-in safe fallback tactics (simp/aesop/etc.).",
+    )
     parser.add_argument("--max_theorems", type=int, default=50)
     parser.add_argument(
         "--dtype",
@@ -711,6 +737,7 @@ def main() -> None:
         top_p=args.top_p,
         max_new_tokens=args.max_new_tokens,
         repetition_penalty=args.repetition_penalty,
+        use_fallback_tactics=not args.disable_fallback_tactics,
     )
     prover_kwargs = dict(
         tac_gen=gen,
