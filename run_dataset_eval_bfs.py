@@ -124,6 +124,53 @@ def _patch_lean_dojo_exports() -> None:
 
     still_missing = [name for name in missing if not hasattr(ld2, name)]
     if still_missing:
+        # Version-compatibility aliases for known renamed/removed symbols.
+        alias_candidates = {
+            "DojoCrashError": ["DojoHardTimeoutError", "DojoTimeoutError"],
+            "DojoInitError": ["DojoError"],
+            "DojoTacticTimeoutError": ["DojoHardTimeoutError", "DojoTimeoutError"],
+            "ProofGivenUp": ["ProofGivenUpError"],
+        }
+        for target in list(still_missing):
+            for alias in alias_candidates.get(target, []):
+                if hasattr(ld2, alias):
+                    setattr(ld2, target, getattr(ld2, alias))
+                    break
+            if hasattr(ld2, target):
+                still_missing.remove(target)
+
+    if still_missing:
+        # Last-resort placeholders so BFSP modules can import. This keeps runtime
+        # compatible across partially broken package versions.
+        if "DojoCrashError" in still_missing and not hasattr(ld2, "DojoCrashError"):
+            class DojoCrashError(Exception):
+                pass
+            setattr(ld2, "DojoCrashError", DojoCrashError)
+            still_missing.remove("DojoCrashError")
+
+        if "DojoInitError" in still_missing and not hasattr(ld2, "DojoInitError"):
+            class DojoInitError(Exception):
+                pass
+            setattr(ld2, "DojoInitError", DojoInitError)
+            still_missing.remove("DojoInitError")
+
+        if (
+            "DojoTacticTimeoutError" in still_missing
+            and not hasattr(ld2, "DojoTacticTimeoutError")
+        ):
+            class DojoTacticTimeoutError(Exception):
+                pass
+            setattr(ld2, "DojoTacticTimeoutError", DojoTacticTimeoutError)
+            still_missing.remove("DojoTacticTimeoutError")
+
+        if "ProofGivenUp" in still_missing and not hasattr(ld2, "ProofGivenUp"):
+            class ProofGivenUp:
+                pass
+            setattr(ld2, "ProofGivenUp", ProofGivenUp)
+            still_missing.remove("ProofGivenUp")
+
+    still_missing = [name for name in missing if not hasattr(ld2, name)]
+    if still_missing:
         pkg_names = [pkg.__name__ for pkg in candidate_pkgs]
         raise RuntimeError(
             "Could not patch required Dojo symbols for BFSP: "
