@@ -65,13 +65,15 @@ def _import_site_package(pkg_name: str):
         if not init_py.exists():
             continue
         spec = importlib.util.spec_from_file_location(
-            f"{pkg_name}__sitepkg",
+            pkg_name,
             str(init_py),
             submodule_search_locations=[str(pkg_dir)],
         )
         if spec is None or spec.loader is None:
             continue
         mod = importlib.util.module_from_spec(spec)
+        # Ensure package-relative imports (e.g. from .foo import bar) resolve.
+        sys.modules[pkg_name] = mod
         spec.loader.exec_module(mod)
         return mod
     return None
