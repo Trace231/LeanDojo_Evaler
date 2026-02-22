@@ -1,0 +1,22 @@
+============================================================
+ROOT-CAUSE CLASSIFICATION
+============================================================
+
+--- Confident-Hallucination Errors ---
+(ErrorNode with cumulative_logprob > -1.0, i.e. near 0)
+  Found 10 confident-hallucination errors
+  [succ_add_succ_2] depth=1 cum_lp=-0.058 tactic="theorem succ_add_succ (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_3] depth=1 cum_lp=-0.058 tactic="theorem succ_add_succ (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_4] depth=1 cum_lp=-0.058 tactic="theorem succ_add_succ (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_4] depth=1 cum_lp=-0.109 tactic="theorem succ_add_succ_eq_succ_succ_add (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_2] depth=1 cum_lp=-0.115 tactic="theorem succ_add_succ_eq_succ_succ (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_3] depth=1 cum_lp=-0.129 tactic="theorem succ_add_succ_eq_succ_succ {a b : Nat} : a.succ + b.succ = (a + b).succ.succ := by" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_2] depth=1 cum_lp=-0.139 tactic="theorem add_succ (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_4] depth=1 cum_lp=-0.153 tactic="theorem step1 : ∀ (a b : Nat), a.succ + b.succ = (a + b).succ.succ := by" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_2] depth=1 cum_lp=-0.918 tactic="`intro a b" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+  [succ_add_succ_4] depth=1 cum_lp=-0.918 tactic="`intro a b" error="{'hasSorry': False, 'hasUnsafe': False, 'parseError': "<Pantograph>:1:0: expected '{' or tactic"}"
+
+--- Search-Confusion Diagnosis ---
+(Last 100 expanded nodes with avg cumulative_logprob < -10.0)
+
+  Total search-confusion theorems: 0 / 3

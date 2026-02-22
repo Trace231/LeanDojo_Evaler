@@ -1,0 +1,85 @@
+{
+  "theorem_name": "succ_add_succ_2",
+  "theorem_statement": "\n\u22a2 \u2200 (a b : Nat), a.succ + b.succ = (a + b).succ.succ",
+  "file_path": "lean4-example",
+  "status": "Failed",
+  "proof": null,
+  "total_time": 6.279953479766846,
+  "actor_time": 6.277890920639038,
+  "environment_time": 0.0019290447235107422,
+  "num_total_nodes": 6,
+  "num_searched_nodes": 6,
+  "search_tree": {
+    "node_type": "InternalNode",
+    "state_text": "\n\u22a2 \u2200 (a b : Nat), a.succ + b.succ = (a + b).succ.succ",
+    "tactic": null,
+    "step_logprob": 0.0,
+    "cumulative_logprob": 0.0,
+    "depth": 0,
+    "ppl": null,
+    "order_of_expansion": 0,
+    "error_message": null,
+    "children": [
+      {
+        "node_type": "ErrorNode",
+        "state_text": null,
+        "tactic": "theorem succ_add_succ (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by",
+        "step_logprob": -0.058282663745264855,
+        "cumulative_logprob": -0.058282663745264855,
+        "depth": 1,
+        "ppl": 1.060014581058852,
+        "order_of_expansion": 1,
+        "error_message": "{'hasSorry': False, 'hasUnsafe': False, 'parseError': \"<Pantograph>:1:0: expected '{' or tactic\"}",
+        "children": []
+      },
+      {
+        "node_type": "ErrorNode",
+        "state_text": null,
+        "tactic": "theorem succ_add_succ_eq_succ_succ (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by",
+        "step_logprob": -0.11457729983974148,
+        "cumulative_logprob": -0.11457729983974148,
+        "depth": 1,
+        "ppl": 1.1213993217015734,
+        "order_of_expansion": 2,
+        "error_message": "{'hasSorry': False, 'hasUnsafe': False, 'parseError': \"<Pantograph>:1:0: expected '{' or tactic\"}",
+        "children": []
+      },
+      {
+        "node_type": "ErrorNode",
+        "state_text": null,
+        "tactic": "theorem add_succ (a b : Nat) : a.succ + b.succ = (a + b).succ.succ := by",
+        "step_logprob": -0.13859799401513462,
+        "cumulative_logprob": -0.13859799401513462,
+        "depth": 1,
+        "ppl": 1.1486622380798994,
+        "order_of_expansion": 3,
+        "error_message": "{'hasSorry': False, 'hasUnsafe': False, 'parseError': \"<Pantograph>:1:0: expected '{' or tactic\"}",
+        "children": []
+      },
+      {
+        "node_type": "ErrorNode",
+        "state_text": null,
+        "tactic": "```lean4",
+        "step_logprob": -1.031298319498698,
+        "cumulative_logprob": -1.031298319498698,
+        "depth": 1,
+        "ppl": 2.8047048748966543,
+        "order_of_expansion": 4,
+        "error_message": "{'hasSorry': False, 'hasUnsafe': False, 'parseError': \"<Pantograph>:1:0: expected '{' or tactic\"}",
+        "children": []
+      },
+      {
+        "node_type": "ErrorNode",
+        "state_text": null,
+        "tactic": "`intro a b",
+        "step_logprob": -0.918461799621582,
+        "cumulative_logprob": -0.918461799621582,
+        "depth": 1,
+        "ppl": 2.505433565553756,
+        "order_of_expansion": 5,
+        "error_message": "{'hasSorry': False, 'hasUnsafe': False, 'parseError': \"<Pantograph>:1:0: expected '{' or tactic\"}",
+        "children": []
+      }
+    ]
+  }
+}
