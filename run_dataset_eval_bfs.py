@@ -57,6 +57,60 @@ def _load_core_symbols() -> None:
     Theorem = _Theorem
 
 
+def _refresh_core_symbols_from_patched_ld2() -> None:
+    """After export patching, rebind symbols to the same runtime used by Dojo."""
+    global LeanGitRepo, Pos, Theorem
+    import lean_dojo_v2.lean_dojo as ld2
+
+    LeanGitRepo = ld2.LeanGitRepo
+    Pos = ld2.Pos
+    Theorem = ld2.Theorem
+
+
+def _make_pos_like(pos_data, PosCls):
+    if isinstance(pos_data, str):
+        try:
+            return PosCls.from_str(pos_data)
+        except Exception:
+            pass
+    if isinstance(pos_data, dict) and "line_nb" in pos_data and "column_nb" in pos_data:
+        return PosCls(int(pos_data["line_nb"]), int(pos_data["column_nb"]))
+    if isinstance(pos_data, (list, tuple)) and len(pos_data) == 2:
+        return PosCls(int(pos_data[0]), int(pos_data[1]))
+    return PosCls(1, 1)
+
+
+def _build_theorem_like(item: dict, LeanGitRepoCls, PosCls, TheoremCls):
+    repo = LeanGitRepoCls(item["url"], item["commit"])
+    file_path = Path(item["file_path"])
+    full_name = item["full_name"]
+    start = _make_pos_like(item.get("start"), PosCls)
+    end = _make_pos_like(item.get("end"), PosCls)
+
+    sig = inspect.signature(TheoremCls)
+    kwargs = {}
+    for name in sig.parameters:
+        if name == "self":
+            continue
+        if name == "repo":
+            kwargs[name] = repo
+        elif name == "file_path":
+            kwargs[name] = file_path
+        elif name == "full_name":
+            kwargs[name] = full_name
+        elif name == "start":
+            kwargs[name] = start
+        elif name == "end":
+            kwargs[name] = end
+        elif name == "url":
+            kwargs[name] = item["url"]
+        elif name == "commit":
+            kwargs[name] = item["commit"]
+        elif name == "theorem_statement":
+            kwargs[name] = item.get("theorem_statement")
+    return TheoremCls(**kwargs), repo, start
+
+
 def _import_site_package(pkg_name: str):
     """Load a package directly from site-packages to avoid local shadowing."""
     for base in site.getsitepackages():
@@ -253,6 +307,7 @@ def _patch_lean_dojo_exports() -> None:
 def _load_best_first_search_prover():
     """Load BestFirstSearchProver with a fallback for broken prover __init__.py."""
     _patch_lean_dojo_exports()
+    _refresh_core_symbols_from_patched_ld2()
     try:
         from lean_dojo_v2.lean_agent.prover.proof_search import BestFirstSearchProver
 
@@ -451,17 +506,7 @@ class DeepSeekGenerator:
 
 
 def _parse_pos(item: dict) -> Pos:
-    start = item.get("start")
-    if isinstance(start, str):
-        try:
-            return Pos.from_str(start)
-        except Exception:
-            pass
-    if isinstance(start, (list, tuple)) and len(start) == 2:
-        return Pos(int(start[0]), int(start[1]))
-    if isinstance(start, dict) and "line_nb" in start and "column_nb" in start:
-        return Pos(int(start["line_nb"]), int(start["column_nb"]))
-    return Pos(1, 1)
+    return _make_pos_like(item.get("start"), Pos)
 
 
 def main() -> None:
@@ -542,16 +587,22 @@ def main() -> None:
 
     stats = {"proved": 0, "failed": 0, "init_error": 0}
     for idx, item in enumerate(dataset, start=1):
-        url = item["url"]
-        commit = item["commit"]
-        file_path = item["file_path"]
         full_name = item["full_name"]
-        pos = _parse_pos(item)
+        thm, repo, pos = _build_theorem_like(item, LeanGitRepo, Pos, Theorem)
 
-        repo = LeanGitRepo(url, commit)
-        thm = Theorem(repo=repo, file_path=Path(file_path), full_name=full_name)
-
-        result = prover.search(repo=repo, thm=thm, pos=pos)
+        try:
+            result = prover.search(repo=repo, thm=thm, pos=pos)
+        except AssertionError as ex:
+            stats["init_error"] += 1
+            print(
+                f"[{idx}/{len(dataset)}] INIT_ERROR {full_name} "
+                f"(Dojo assertion: {ex})"
+            )
+            continue
+        except Exception as ex:
+            stats["init_error"] += 1
+            print(f"[{idx}/{len(dataset)}] INIT_ERROR {full_name} ({type(ex).__name__}: {ex})")
+            continue
         if result is None:
             stats["init_error"] += 1
             print(f"[{idx}/{len(dataset)}] INIT_ERROR {full_name}")
