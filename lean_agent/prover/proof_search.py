@@ -1,6 +1,7 @@
 """Proof search using best-first search."""
 
 import asyncio
+from collections import defaultdict
 import json
 import os
 import sys
@@ -8,7 +9,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import ray
 import torch
@@ -72,17 +73,37 @@ class BestFirstSearchProver:
         max_expansions: Optional[int],
         num_sampled_tactics: int,
         debug: bool,
+        analysis_event_dir: Optional[str] = None,
     ) -> None:
         self.tac_gen = tac_gen
         self.timeout = timeout
         self.max_expansions = max_expansions
         self.num_sampled_tactics = num_sampled_tactics
         self.debug = debug
+        self.analysis_event_dir = analysis_event_dir or os.environ.get(
+            "LEANDOJO_ANALYSIS_EVENT_DIR"
+        )
 
         self.num_expansions = 0
         self.actor_time = 0.0
         self.environment_time = 0.0
         self.total_time = None
+        self._analysis_events_path: Optional[Path] = None
+        self._analysis_summary_path: Optional[Path] = None
+        self._analysis_width_by_depth: Dict[int, int] = {}
+        self._analysis_expanded_by_depth: Dict[int, int] = {}
+        self._analysis_blind_expansions = 0
+        self._analysis_generated_calls = 0
+        self._analysis_zero_suggestion_calls = 0
+        self._analysis_total_suggestions = 0
+        self._analysis_total_executed_edges = 0
+        self._analysis_step_logprob_sum = 0.0
+        self._analysis_success_step_logprob_sum = 0.0
+        self._analysis_error_step_logprob_sum = 0.0
+        self._analysis_success_step_count = 0
+        self._analysis_error_step_count = 0
+        self._analysis_max_depth = 0
+        self._analysis_queue_peak = 0
 
     def search(
         self, repo: LeanGitRepo, thm: Theorem, pos: Pos
@@ -116,6 +137,7 @@ class BestFirstSearchProver:
         self.actor_time = 0.0
         self.environment_time = 0.0
         self.num_expansions = 0
+        self._init_analysis(thm)
 
         if isinstance(self.tac_gen, FixedTacticGenerator):
             imps = [self.tac_gen.module]
@@ -180,6 +202,7 @@ class BestFirstSearchProver:
             "environment_time": self.environment_time,
             "num_total_nodes": len(self.nodes),
             "num_searched_nodes": self.num_expansions,
+            "analysis": self._build_analysis_summary(),
             "search_tree": self.root.to_dict(),
         }
 
@@ -195,14 +218,100 @@ class BestFirstSearchProver:
             with open(output_path, "w") as f:
                 json.dump(tree_dict, f, indent=2, default=str)
             logger.info(f"Search tree exported to {output_path}")
+            if self._analysis_summary_path is not None:
+                with open(self._analysis_summary_path, "w") as sf:
+                    json.dump(tree_dict.get("analysis", {}), sf, indent=2, default=str)
         except Exception as e:
             logger.warning(f"Failed to export search tree: {e}")
+
+    def _init_analysis(self, thm: Theorem) -> None:
+        self._analysis_width_by_depth = defaultdict(int)
+        self._analysis_expanded_by_depth = defaultdict(int)
+        self._analysis_blind_expansions = 0
+        self._analysis_generated_calls = 0
+        self._analysis_zero_suggestion_calls = 0
+        self._analysis_total_suggestions = 0
+        self._analysis_total_executed_edges = 0
+        self._analysis_step_logprob_sum = 0.0
+        self._analysis_success_step_logprob_sum = 0.0
+        self._analysis_error_step_logprob_sum = 0.0
+        self._analysis_success_step_count = 0
+        self._analysis_error_step_count = 0
+        self._analysis_max_depth = 0
+        self._analysis_queue_peak = 0
+        self._analysis_events_path = None
+        self._analysis_summary_path = None
+
+        if not self.analysis_event_dir:
+            return
+
+        event_dir = Path(self.analysis_event_dir)
+        event_dir.mkdir(parents=True, exist_ok=True)
+        safe_name = (
+            thm.full_name.replace("/", "_").replace("\\", "_").replace(".", "_")
+        )
+        self._analysis_events_path = event_dir / f"{safe_name}.events.jsonl"
+        self._analysis_summary_path = event_dir / f"{safe_name}.summary.json"
+
+    def _record_analysis_event(self, event_type: str, payload: Dict[str, Any]) -> None:
+        if self._analysis_events_path is None:
+            return
+        event = {"event_type": event_type, "timestamp": time.time(), **payload}
+        with open(self._analysis_events_path, "a") as f:
+            f.write(json.dumps(event, default=str) + "\n")
+
+    def _build_analysis_summary(self) -> Dict[str, Any]:
+        avg_step_logprob = (
+            self._analysis_step_logprob_sum / self._analysis_total_executed_edges
+            if self._analysis_total_executed_edges > 0
+            else None
+        )
+        avg_success_step_logprob = (
+            self._analysis_success_step_logprob_sum / self._analysis_success_step_count
+            if self._analysis_success_step_count > 0
+            else None
+        )
+        avg_error_step_logprob = (
+            self._analysis_error_step_logprob_sum / self._analysis_error_step_count
+            if self._analysis_error_step_count > 0
+            else None
+        )
+        blind_search_ratio = (
+            self._analysis_blind_expansions / self.num_expansions
+            if self.num_expansions > 0
+            else 0.0
+        )
+
+        return {
+            "blind_expansions": self._analysis_blind_expansions,
+            "blind_search_ratio": blind_search_ratio,
+            "generated_calls": self._analysis_generated_calls,
+            "zero_suggestion_calls": self._analysis_zero_suggestion_calls,
+            "total_suggestions": self._analysis_total_suggestions,
+            "total_executed_edges": self._analysis_total_executed_edges,
+            "avg_suggestions_per_expansion": (
+                self._analysis_total_suggestions / self.num_expansions
+                if self.num_expansions > 0
+                else 0.0
+            ),
+            "step_logprob_sum_all": self._analysis_step_logprob_sum,
+            "avg_step_logprob_all": avg_step_logprob,
+            "step_logprob_sum_success": self._analysis_success_step_logprob_sum,
+            "avg_step_logprob_success": avg_success_step_logprob,
+            "step_logprob_sum_error": self._analysis_error_step_logprob_sum,
+            "avg_step_logprob_error": avg_error_step_logprob,
+            "max_depth_reached": self._analysis_max_depth,
+            "queue_peak_size": self._analysis_queue_peak,
+            "width_by_depth": dict(self._analysis_width_by_depth),
+            "expanded_by_depth": dict(self._analysis_expanded_by_depth),
+        }
 
     async def _best_first_search(self) -> None:  # @@
         time_start = time.monotonic() 
 
         priority_queue = asyncio.PriorityQueue()
         priority_queue.put_nowait((-self.root.priority, self.root))
+        self._analysis_queue_peak = max(self._analysis_queue_peak, 1)
 
         while True:
             if priority_queue.empty():
@@ -247,12 +356,16 @@ class BestFirstSearchProver:
         a new node for each valid result.
         """
         # Search the node with highest priority. #@@
+        queue_size_before_pop = priority_queue.qsize()
+        self._analysis_queue_peak = max(self._analysis_queue_peak, queue_size_before_pop)
         try:
             _, search_node = priority_queue.get_nowait()
         except asyncio.QueueEmpty:
             return
         self.num_expansions += 1
         search_node.order_of_expansion = self.num_expansions
+        self._analysis_expanded_by_depth[search_node.depth] += 1
+        self._analysis_max_depth = max(self._analysis_max_depth, search_node.depth)
         logger.debug(f"Expanding node: {search_node}")
 
         if isinstance(search_node.state, TacticState):
@@ -260,6 +373,10 @@ class BestFirstSearchProver:
         else:
             ts = search_node.state.unsolved_tactic_state
         suggestions = await self._generate_tactics(ts)
+        self._analysis_generated_calls += 1
+        self._analysis_total_suggestions += len(suggestions)
+        if len(suggestions) == 0:
+            self._analysis_zero_suggestion_calls += 1
 
         # Try all tactics in order of descending logprob, and collect the results. Any
         # new nodes are added to `self.nodes`, and edges are added to the result node.
@@ -275,6 +392,25 @@ class BestFirstSearchProver:
         # Store the fixed out edges of this node, marking it as explored.
         # This will trigger recursively recomputing tree statistics.
         search_node.out_edges = results
+        blind_expansion = (len(results) == 0) or all(
+            isinstance(edge.dst, ErrorNode) for edge in results
+        )
+        if blind_expansion:
+            self._analysis_blind_expansions += 1
+        self._record_analysis_event(
+            "expansion",
+            {
+                "expansion_id": self.num_expansions,
+                "node_depth": search_node.depth,
+                "queue_size_before_pop": queue_size_before_pop,
+                "num_suggestions": len(suggestions),
+                "num_children": len(results),
+                "num_error_children": sum(
+                    1 for edge in results if isinstance(edge.dst, ErrorNode)
+                ),
+                "blind_expansion": blind_expansion,
+            },
+        )
         priority_queue.task_done()
 
         # If we're running in debug mode, run a full test suite each step
@@ -337,9 +473,14 @@ class BestFirstSearchProver:
                     cumulative_logprob=logprob + node.cumulative_logprob,
                     depth=node.depth + 1,
                 )
+                self._analysis_width_by_depth[result_node.depth] += 1
+                self._analysis_max_depth = max(self._analysis_max_depth, result_node.depth)
 
             if result_node.status == Status.OPEN:  # Don't search proved/failed nodes
                 priority_queue.put_nowait((-result_node.priority, result_node))
+                self._analysis_queue_peak = max(
+                    self._analysis_queue_peak, priority_queue.qsize()
+                )
 
         # Record the new node and add it to the search queue.
         self.nodes[response] = result_node
@@ -350,6 +491,27 @@ class BestFirstSearchProver:
 
         if isinstance(result_node, InternalNode):
             result_node.in_edges.append(edge)
+
+        self._analysis_step_logprob_sum += logprob
+        self._analysis_total_executed_edges += 1
+        if isinstance(result_node, ErrorNode):
+            self._analysis_error_step_logprob_sum += logprob
+            self._analysis_error_step_count += 1
+        else:
+            self._analysis_success_step_logprob_sum += logprob
+            self._analysis_success_step_count += 1
+
+        self._record_analysis_event(
+            "edge",
+            {
+                "src_depth": node.depth,
+                "dst_depth": getattr(result_node, "depth", node.depth + 1),
+                "tactic": tactic,
+                "step_logprob": logprob,
+                "dst_type": type(result_node).__name__,
+                "dst_status": result_node.status.value,
+            },
+        )
 
         return edge, isinstance(response, ProofFinished)
 

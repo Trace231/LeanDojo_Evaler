@@ -113,6 +113,7 @@ def load_all_trees(input_dir: str) -> Tuple[pd.DataFrame, List[dict]]:
                 "environment_time": data.get("environment_time"),
                 "num_total_nodes": data.get("num_total_nodes"),
                 "num_searched_nodes": data.get("num_searched_nodes"),
+                "analysis": data.get("analysis", {}),
                 "file": str(fpath),
             }
         )
@@ -231,6 +232,88 @@ def basic_statistics(df: pd.DataFrame, meta_list: List[dict], out_dir: Path) -> 
     report = "\n".join(report_lines)
     print(report)
     (out_dir / "basic_statistics.txt").write_text(report)
+
+
+# ---------------------------------------------------------------------------
+# 3.5 Search efficiency statistics (from runtime analysis block)
+# ---------------------------------------------------------------------------
+
+
+def efficiency_statistics(meta_list: List[dict], out_dir: Path) -> None:
+    rows = []
+    for m in meta_list:
+        analysis = m.get("analysis", {}) or {}
+        if not analysis:
+            continue
+        rows.append(
+            {
+                "theorem_name": m["theorem_name"],
+                "status": m["status"],
+                "blind_search_ratio": analysis.get("blind_search_ratio"),
+                "blind_expansions": analysis.get("blind_expansions"),
+                "generated_calls": analysis.get("generated_calls"),
+                "total_suggestions": analysis.get("total_suggestions"),
+                "total_executed_edges": analysis.get("total_executed_edges"),
+                "avg_suggestions_per_expansion": analysis.get(
+                    "avg_suggestions_per_expansion"
+                ),
+                "max_depth_reached": analysis.get("max_depth_reached"),
+                "queue_peak_size": analysis.get("queue_peak_size"),
+                "avg_step_logprob_all": analysis.get("avg_step_logprob_all"),
+                "avg_step_logprob_success": analysis.get("avg_step_logprob_success"),
+                "avg_step_logprob_error": analysis.get("avg_step_logprob_error"),
+            }
+        )
+
+    if not rows:
+        msg = "No runtime analysis block found in input JSONs; skipping efficiency report."
+        print(msg)
+        (out_dir / "efficiency_statistics.txt").write_text(msg)
+        return
+
+    eff = pd.DataFrame(rows)
+    eff.to_csv(out_dir / "efficiency_per_theorem.csv", index=False)
+
+    proved = eff[eff["status"] == "Proved"]
+    failed = eff[eff["status"] != "Proved"]
+
+    def _mean_str(frame: pd.DataFrame, col: str) -> str:
+        if frame.empty or col not in frame:
+            return "N/A"
+        val = frame[col].dropna()
+        return f"{val.mean():.4f}" if not val.empty else "N/A"
+
+    lines = ["=" * 60, "SEARCH EFFICIENCY STATISTICS", "=" * 60]
+    lines.append(f"Theorems with analysis block: {len(eff)}")
+    lines.append(f"  Proved: {len(proved)}")
+    lines.append(f"  Failed/Open: {len(failed)}")
+    lines.append("")
+    lines.append("--- Blind Search Ratio ---")
+    lines.append(f"  Mean (all):    {_mean_str(eff, 'blind_search_ratio')}")
+    lines.append(f"  Mean (proved): {_mean_str(proved, 'blind_search_ratio')}")
+    lines.append(f"  Mean (failed): {_mean_str(failed, 'blind_search_ratio')}")
+    lines.append("")
+    lines.append("--- Search Width/Depth ---")
+    lines.append(f"  Peak queue size (all): {_mean_str(eff, 'queue_peak_size')}")
+    lines.append(f"  Max depth (all):       {_mean_str(eff, 'max_depth_reached')}")
+    lines.append(f"  Executed edges (all):  {_mean_str(eff, 'total_executed_edges')}")
+    lines.append(
+        "  Avg suggestions / expansion (all): "
+        f"{_mean_str(eff, 'avg_suggestions_per_expansion')}"
+    )
+    lines.append("")
+    lines.append("--- Calibration Proxy (step logprob) ---")
+    lines.append(f"  Avg step logprob (all):     {_mean_str(eff, 'avg_step_logprob_all')}")
+    lines.append(
+        f"  Avg step logprob (success): {_mean_str(eff, 'avg_step_logprob_success')}"
+    )
+    lines.append(
+        f"  Avg step logprob (error):   {_mean_str(eff, 'avg_step_logprob_error')}"
+    )
+
+    report = "\n".join(lines)
+    print(report)
+    (out_dir / "efficiency_statistics.txt").write_text(report)
 
 
 # ---------------------------------------------------------------------------
@@ -690,6 +773,7 @@ def main():
 
     # --- Run analyses ---
     basic_statistics(df, meta_list, out_dir)
+    efficiency_statistics(meta_list, out_dir)
     plot_evolution(df, meta_list, out_dir)
 
     gt = load_ground_truth(args.ground_truth)
