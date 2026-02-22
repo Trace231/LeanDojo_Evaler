@@ -1,0 +1,4 @@
+{"event_type": "edge", "timestamp": 1771759314.3323865, "src_depth": 0, "dst_depth": 1, "tactic": "simp_all [minpoly.separable]", "step_logprob": -0.4071682572364807, "dst_type": "ErrorNode", "dst_status": "Failed"}
+{"event_type": "edge", "timestamp": 1771759314.396997, "src_depth": 0, "dst_depth": 1, "tactic": "theorem_1 : (minpoly F x).Separable := by", "step_logprob": -0.5001461676188877, "dst_type": "ErrorNode", "dst_status": "Failed"}
+{"event_type": "edge", "timestamp": 1771759317.635467, "src_depth": 0, "dst_depth": 1, "tactic": "exact?", "step_logprob": -0.7152481079101562, "dst_type": "ErrorNode", "dst_status": "Failed"}
+{"event_type": "expansion", "timestamp": 1771759317.6356573, "expansion_id": 1, "node_depth": 0, "queue_size_before_pop": 1, "num_suggestions": 3, "num_children": 3, "num_error_children": 3, "blind_expansion": true}

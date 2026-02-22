@@ -1,0 +1,9 @@
+data/leandojo_benchmark/random/train_official.json
+data/leandojo_benchmark/random/train_official.json
+data/leandojo_benchmark/random/train_official.json
+# 忽略特定的数据集文件
+data/leandojo_benchmark/random/train_official.json
+
+# 或者更暴力的，忽略所有大于 100MB 可能出现的地方（比如所有 .json 或 .bin）
+*.json
+data/leandojo_benchmark/random/train_official.json

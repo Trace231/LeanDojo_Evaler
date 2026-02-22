@@ -1,0 +1,8 @@
+{"event_type": "edge", "timestamp": 1771759413.802381, "src_depth": 0, "dst_depth": 1, "tactic": "simp [mul_comm]", "step_logprob": -0.2438096489225115, "dst_type": "ErrorNode", "dst_status": "Failed"}
+{"event_type": "edge", "timestamp": 1771759413.8710063, "src_depth": 0, "dst_depth": 1, "tactic": "simp [mul_comm, degree_mul]", "step_logprob": -0.3139403624968095, "dst_type": "ErrorNode", "dst_status": "Failed"}
+{"event_type": "edge", "timestamp": 1771759413.9354625, "src_depth": 0, "dst_depth": 1, "tactic": "degree_mul_comm", "step_logprob": -0.7501294851303101, "dst_type": "ErrorNode", "dst_status": "Failed"}
+{"event_type": "edge", "timestamp": 1771759414.0413995, "src_depth": 0, "dst_depth": 0, "tactic": "ring_nf", "step_logprob": -0.7994798421859741, "dst_type": "InternalNode", "dst_status": "Open"}
+{"event_type": "edge", "timestamp": 1771759414.1058545, "src_depth": 0, "dst_depth": 1, "tactic": "degree_mul", "step_logprob": -0.8075059254964193, "dst_type": "ErrorNode", "dst_status": "Failed"}
+{"event_type": "edge", "timestamp": 1771759414.1704223, "src_depth": 0, "dst_depth": 1, "tactic": "`commute p q`.", "step_logprob": -0.9002354939778646, "dst_type": "ErrorNode", "dst_status": "Failed"}
+{"event_type": "edge", "timestamp": 1771759414.2792745, "src_depth": 0, "dst_depth": 0, "tactic": "ring", "step_logprob": -1.921875, "dst_type": "InternalNode", "dst_status": "Open"}
+{"event_type": "expansion", "timestamp": 1771759414.2793674, "expansion_id": 1, "node_depth": 0, "queue_size_before_pop": 1, "num_suggestions": 7, "num_children": 7, "num_error_children": 5, "blind_expansion": false}
