@@ -1,18 +1,8 @@
 """
 run_modern_eval.py
 ==================
-Full-pipeline evaluation: trace repo → load model → prove theorems
-with REAL Pantograph verification + search tree persistence.
-
-Produces logs/search_trees/*.json in the exact format expected by
-search_analysis_master.py (including step_logprob, cumulative_logprob,
-ppl, node_type, etc.).
-
-Usage:
-    python run_modern_eval.py
-
-    # Then analyse:
-    python search_analysis_master.py --input_dir logs/search_trees
+Full-pipeline evaluation for DeepSeek-Prover-V2 on Lean 4 standard benchmarks.
+Includes text sanitization to bridge DeepSeek's output format with Pantograph.
 """
 
 import json
@@ -23,12 +13,6 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
-
-# Regex for detecting theorem/lemma declarations in model output
-_DECL_RE = re.compile(
-    r'^(theorem|lemma|def|example|private\s+theorem|private\s+lemma)\s+'
-)
-_BY_RE = re.compile(r'\bby\b\s*(.*)', re.DOTALL)
 
 import torch
 from pantograph import Server
@@ -42,12 +26,12 @@ logging.basicConfig(level=logging.INFO)
 
 # ── Config ────────────────────────────────────────────────────────────────
 MODEL_NAME = "deepseek-ai/DeepSeek-Prover-V2-7B"
-URL = "https://github.com/durant42040/lean4-example"
-COMMIT = "005de00d03f1aaa32cb2923d5e3cbaf0b954a192"
 
-# Local path to the v4.26.0 rebuild (bypasses old cached v4.21.0 trace)
-# Set to None to use the default LeanDojo cache (requires matching Lean versions)
-LOCAL_PROJECT_PATH = "/tmp/lean4-example"
+# 切换为标准的 miniF2F Lean 4 测试集
+URL = "https://github.com/amirlfe/miniF2F-lean4"
+COMMIT = "0351f045bb62768560ca9142b451d08e5c184cf4" # 请确保这是你本地能够成功 clone 并编译的 commit
+
+LOCAL_PROJECT_PATH = None # 如果使用上面的远程仓库，设为 None 即可
 
 LOG_DIR = Path("logs/search_trees")
 MAX_STEPS = 100
@@ -58,8 +42,7 @@ NUM_TACTIC_CANDIDATES = 5
 # ── Search tree data structure ────────────────────────────────────────────
 @dataclass
 class TreeNode:
-    """Matches the JSON schema expected by search_analysis_master.py."""
-    node_type: str                          # InternalNode / ErrorNode / ProofFinishedNode
+    node_type: str
     state_text: Optional[str] = None
     tactic: Optional[str] = None
     step_logprob: float = 0.0
@@ -85,9 +68,36 @@ class TreeNode:
         }
 
 
+# ── Text Sanitization (核心修复点) ─────────────────────────────────────────
+def clean_tactic_output(raw_text: str) -> str:
+    """清理模型输出，使其成为纯净的 Lean 4 Tactic"""
+    text = raw_text.strip()
+    
+    # 1. 移除可能存在的 Markdown 代码块标记 (```lean ... ```)
+    text = re.sub(r'```lean\n?(.*?)\n?```', r'\1', text, flags=re.DOTALL)
+    # 2. 移除行内代码的反引号 (`tactic`)
+    text = re.sub(r'`(.*?)`', r'\1', text)
+    
+    # 3. 如果模型输出了定理声明，截取 `:= by` 之后的内容
+    if ':= by' in text:
+        text = text.split(':= by')[-1]
+    
+    # 4. 只取第一行非空的命令 (防止模型一次性输出多行证明)
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    if not lines:
+        return ""
+    
+    tactic = lines[0]
+    
+    # 5. 过滤掉无意义或作弊的 tactic
+    if tactic in ["sorry", "admit"]:
+        return ""
+        
+    return tactic
+
+
 # ── Log-prob scoring ──────────────────────────────────────────────────────
 def compute_step_logprob(model, tokenizer, prompt: str, tactic: str, device) -> float:
-    """Teacher-forced average per-token log-prob of *tactic* given *prompt*."""
     full_text = prompt + tactic
     prompt_ids = tokenizer.encode(prompt, add_special_tokens=False)
     full_ids = tokenizer.encode(full_text, add_special_tokens=False)
@@ -111,53 +121,16 @@ def compute_step_logprob(model, tokenizer, prompt: str, tactic: str, device) -> 
     return total_lp / tactic_len
 
 
-def clean_tactic(raw: str) -> str:
-    """Post-process model output to extract a pure tactic.
-
-    Handles common failure modes:
-      - Model outputs 'theorem Foo : ... := by simp' instead of just 'simp'
-      - Model wraps output in code fences or quotes
-    """
-    tactic = raw.strip().split("\n")[0].split("<;>")[0].strip()
-
-    # Strip code fences
-    tactic = re.sub(r'^```\w*\s*', '', tactic)
-    tactic = re.sub(r'\s*```$', '', tactic)
-
-    # Strip wrapping quotes/backticks
-    if len(tactic) >= 2 and tactic[0] == tactic[-1] and tactic[0] in '`"\'':
-        tactic = tactic[1:-1]
-
-    # If the model output is a theorem/lemma declaration, extract the tactic after 'by'
-    if _DECL_RE.match(tactic):
-        by_match = _BY_RE.search(tactic)
-        if by_match:
-            tactic = by_match.group(1).strip()
-        else:
-            return ""
-
-    # Remove leading 'by '
-    if tactic.startswith("by "):
-        tactic = tactic[3:].strip()
-
-    if tactic in ("sorry", "admit", ""):
-        return ""
-
-    return tactic
-
-
 def build_prompt(goal_str: str) -> str:
+    # 强化了格式要求的 Prompt
     return (
         "### System:\n"
-        "You are a Lean 4 tactic generator.\n"
-        "Given a proof goal state, output exactly ONE tactic that makes progress.\n"
+        "You are an expert Lean 4 tactic generator. Given the current tactic state, "
+        "output exactly ONE valid Lean 4 tactic to advance the proof.\n"
         "CRITICAL RULES:\n"
-        "- Output ONLY the tactic text (e.g., 'simp', 'ring', 'exact h').\n"
-        "- Do NOT output theorem/lemma/def declarations.\n"
-        "- Do NOT wrap in code fences, quotes, or markdown.\n"
-        "- Do NOT write 'by' before the tactic.\n"
-        "- Single line only. No semicolons, no multi-step combinator.\n"
-        "- Never use 'sorry' or 'admit'.\n"
+        "- DO NOT output the theorem declaration or `:= by`.\n"
+        "- DO NOT wrap the tactic in markdown backticks.\n"
+        "- Output ONLY the raw tactic text on a single line.\n"
         "### User:\n"
         f"{goal_str}\n\n"
         "### Assistant:\n"
@@ -165,7 +138,6 @@ def build_prompt(goal_str: str) -> str:
 
 
 def generate_tactics_with_logprobs(model, tokenizer, goal_str: str, device, n: int = 5):
-    """Generate tactic candidates and score each one."""
     prompt = build_prompt(goal_str)
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(device)
 
@@ -185,11 +157,15 @@ def generate_tactics_with_logprobs(model, tokenizer, goal_str: str, device, n: i
     texts = tokenizer.batch_decode(outputs, skip_special_tokens=True)
     seen = set()
     candidates = []
+    
     for text in texts:
-        raw = text[len(prompt):]
-        tactic = clean_tactic(raw)
+        raw_output = text[len(prompt):]
+        # 调用我们新增的清理函数
+        tactic = clean_tactic_output(raw_output)
+        
         if not tactic or tactic in seen:
             continue
+            
         seen.add(tactic)
         lp = compute_step_logprob(model, tokenizer, prompt, tactic, device)
         candidates.append({"tactic": tactic, "step_logprob": lp})
@@ -203,10 +179,9 @@ def instrumented_search(
     model, tokenizer, device,
     server: Server,
     theorem_name: str,
-    goal_state_obj,  # pantograph GoalState from server.goal_start
+    goal_state_obj, 
     initial_goal_str: str,
 ) -> dict:
-    """DFS search with real Pantograph verification + full tree tracking."""
     t0 = time.time()
     actor_time = 0.0
     env_time = 0.0
@@ -221,7 +196,6 @@ def instrumented_search(
     expansion_counter += 1
     total_nodes = 1
 
-    # Stack: (pantograph_goal_state, tree_node, trial_index)
     stack = [(goal_state_obj, root, 0)]
     status = "Failed"
     proof_tactics = None
@@ -232,7 +206,6 @@ def instrumented_search(
 
         gs, current_node, trials = stack[-1]
 
-        # Check solved
         if len(gs.goals) == 0:
             current_node.node_type = "ProofFinishedNode"
             status = "Proved"
@@ -245,7 +218,6 @@ def instrumented_search(
 
         goal_str = str(gs)
 
-        # Generate tactic candidates (with log-probs)
         t_a = time.time()
         candidates = generate_tactics_with_logprobs(
             model, tokenizer, goal_str, device, n=NUM_TACTIC_CANDIDATES,
@@ -265,7 +237,6 @@ def instrumented_search(
         depth = current_node.depth + 1
         ppl = math.exp(-cum_lp / depth) if cum_lp < 0 else None
 
-        # Apply tactic in Pantograph (REAL verification)
         t_e = time.time()
         try:
             next_gs = server.goal_tactic(gs, tactic)
@@ -321,7 +292,7 @@ def instrumented_search(
     return {
         "theorem_name": theorem_name,
         "theorem_statement": initial_goal_str,
-        "file_path": "lean4-example",
+        "file_path": "minif2f",
         "status": status,
         "proof": proof_tactics,
         "total_time": total_time,
@@ -353,15 +324,12 @@ def export_tree(tree_dict: dict, log_dir: Path) -> Path:
     return out
 
 
-# ── Agent subclass ────────────────────────────────────────────────────────
 class FullMathlibAgent(HFAgent):
     def _get_build_deps(self) -> bool:
         return True
 
 
-# ── Main ──────────────────────────────────────────────────────────────────
 def main():
-    # ── Stage 1: Setup (trace repo + load model) ──────────────────────────
     trainer = SFTTrainer(
         model_name=MODEL_NAME,
         output_dir="outputs-deepseek",
@@ -371,7 +339,7 @@ def main():
     agent = FullMathlibAgent(trainer=trainer)
     agent.output_dir = MODEL_NAME
 
-    print("Stage 1: Setting up repository...")
+    print(f"Stage 1: Setting up repository {URL}...")
     agent.setup_github_repository(url=URL, commit=COMMIT)
 
     print("Stage 1: Initializing prover...")
@@ -383,12 +351,10 @@ def main():
 
     print(f"Found {len(sorry_theorems)} sorry theorems to prove")
 
-    # Get model and tokenizer from the loaded HFProver
     model = agent.prover.model
     tokenizer = agent.prover.tokenizer
     device = agent.prover.device
 
-    # ── Stage 2: Instrumented search with tree persistence ────────────────
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     stats = {"proved": 0, "failed": 0, "error": 0}
 
@@ -396,12 +362,11 @@ def main():
         print(f"\n{'='*60}")
         print(f"[{i+1}/{len(sorry_theorems)}] {theorem.full_name}")
 
-        # Create a REAL Pantograph server with full project context
-        # Use LOCAL_PROJECT_PATH (v4.26.0 build) to bypass cached v4.21.0 trace
         if LOCAL_PROJECT_PATH:
             project_path = Path(LOCAL_PROJECT_PATH)
         else:
             project_path = get_traced_repo_path(repo, build_deps=True)
+            
         try:
             server = Server(
                 imports=["Init", str(theorem.file_path).replace(".lean", "")],
@@ -410,23 +375,8 @@ def main():
         except Exception as e:
             print(f"  Server init failed: {e}")
             stats["error"] += 1
-            err_tree = {
-                "theorem_name": theorem.full_name,
-                "theorem_statement": str(theorem),
-                "file_path": str(theorem.file_path),
-                "status": "Failed",
-                "proof": None,
-                "total_time": 0, "actor_time": 0, "environment_time": 0,
-                "num_total_nodes": 1, "num_searched_nodes": 0,
-                "search_tree": TreeNode(
-                    node_type="ErrorNode",
-                    error_message=f"Server init: {e}",
-                ).to_dict(),
-            }
-            export_tree(err_tree, LOG_DIR)
             continue
 
-        # Start the goal (uses env_inspect to get the theorem's type)
         try:
             goal_type = server.env_inspect(theorem.full_name)["type"]["pp"]
             goal_state = server.goal_start(goal_type)
@@ -434,26 +384,10 @@ def main():
         except Exception as e:
             print(f"  goal_start failed: {e}")
             stats["error"] += 1
-            err_tree = {
-                "theorem_name": theorem.full_name,
-                "theorem_statement": str(theorem),
-                "file_path": str(theorem.file_path),
-                "status": "Failed",
-                "proof": None,
-                "total_time": 0, "actor_time": 0, "environment_time": 0,
-                "num_total_nodes": 1, "num_searched_nodes": 0,
-                "search_tree": TreeNode(
-                    node_type="ErrorNode",
-                    state_text=str(theorem),
-                    error_message=f"goal_start: {e}",
-                ).to_dict(),
-            }
-            export_tree(err_tree, LOG_DIR)
             continue
 
         print(f"  Goal: {initial_goal_str[:120]}...")
 
-        # Run instrumented search
         tree_dict = instrumented_search(
             model, tokenizer, device,
             server, theorem.full_name,
@@ -477,7 +411,6 @@ def main():
 
         print(f"  Tree saved: {out_path}")
 
-    # ── Summary ───────────────────────────────────────────────────────────
     total = stats["proved"] + stats["failed"] + stats["error"]
     print(f"\n{'='*60}")
     print(f"EVALUATION COMPLETE")
@@ -486,7 +419,6 @@ def main():
     print(f"  Failed:  {stats['failed']}")
     print(f"  Error:   {stats['error']}")
     print(f"\nSearch trees: {LOG_DIR}/")
-    print(f"Next: python search_analysis_master.py --input_dir {LOG_DIR}")
 
 
 if __name__ == "__main__":

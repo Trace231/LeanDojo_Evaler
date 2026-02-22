@@ -1,22 +1,29 @@
 """
 run_dataset_eval.py
 ===================
-Instrumented search evaluation on the LeanDojo benchmark.
+Instrumented search evaluation on the LeanDojo benchmark with REAL
+Pantograph verification against a built mathlib4 project.
 
-Uses the pre-downloaded benchmark (JSON with traced theorems) and a bare
-Pantograph server.  For each theorem it runs a depth-limited search,
-computes per-step log-probabilities, and exports search trees in the
-exact JSON format expected by search_analysis_master.py.
+For each theorem the script:
+  1. Starts a Pantograph server with the theorem's module imported
+  2. Uses env_inspect to get the theorem's type
+  3. Runs DFS search: generate tactics -> verify with Pantograph -> build tree
+  4. Computes per-step log-probabilities (teacher-forced scoring)
+  5. Exports search trees in the JSON format expected by search_analysis_master.py
 
-Usage:
-    # 1. Download the benchmark first
-    python download_benchmark.py --sample 50
+Prerequisites
+-------------
+  # 1. Set up mathlib4 (MUST match Pantograph's Lean version)
+  bash setup_mathlib4.sh
 
-    # 2. Run evaluation
-    python run_dataset_eval.py
+  # 2. Download the benchmark
+  python download_benchmark.py --sample 50
 
-    # 3. Analyse
-    python search_analysis_master.py --input_dir logs/search_trees
+  # 3. Run evaluation
+  python run_dataset_eval.py
+
+  # 4. Analyse
+  python search_analysis_master.py --input_dir logs/search_trees
 """
 
 import json
@@ -24,21 +31,25 @@ import math
 import os
 import re
 import time
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # ---------------------------------------------------------------------------
-# Pantograph imports (only needed if a live server is available)
+# Pantograph imports
 # ---------------------------------------------------------------------------
 try:
     from pantograph.server import Server, ServerError, TacticFailure
     HAS_PANTOGRAPH = True
 except ImportError:
     HAS_PANTOGRAPH = False
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Config
@@ -47,6 +58,11 @@ MODEL_NAME = "deepseek-ai/DeepSeek-Prover-V2-7B"
 
 DATASET_PATH = "data/leandojo_benchmark/random/test.json"
 SAMPLED_DATASET_PATH = "data/leandojo_benchmark/random/test_sampled_50.json"
+
+# Path to a built mathlib4 project (must match Pantograph's Lean version).
+# Run `bash setup_mathlib4.sh` to set this up.
+# Set to None to use offline mode (no real tactic verification).
+MATHLIB_PROJECT_PATH = "/tmp/mathlib4"
 
 LOG_DIR = Path("logs/search_trees")
 
@@ -57,7 +73,7 @@ MAX_THEOREMS = 50          # How many theorems to evaluate (0 = all)
 
 
 # ---------------------------------------------------------------------------
-# Search tree data structure (mirrors BestFirstSearchProver's export format)
+# Search tree data structure
 # ---------------------------------------------------------------------------
 @dataclass
 class TreeNode:
@@ -65,17 +81,17 @@ class TreeNode:
     expected by search_analysis_master.py."""
     node_type: str                          # InternalNode / ErrorNode / ProofFinishedNode
     state_text: Optional[str] = None
-    tactic: Optional[str] = None            # Tactic that LED to this node
+    tactic: Optional[str] = None
     step_logprob: float = 0.0
     cumulative_logprob: float = 0.0
     depth: int = 0
     ppl: Optional[float] = None
-    order_of_expansion: int = -1            # -1 = not yet expanded
+    order_of_expansion: int = -1
     error_message: Optional[str] = None
     children: List["TreeNode"] = field(default_factory=list)
 
     def to_dict(self) -> dict:
-        d = {
+        return {
             "node_type": self.node_type,
             "state_text": self.state_text,
             "tactic": self.tactic,
@@ -87,7 +103,59 @@ class TreeNode:
             "error_message": self.error_message,
             "children": [c.to_dict() for c in self.children],
         }
-        return d
+
+
+# ---------------------------------------------------------------------------
+# Tactic cleaning — prevents "theorem X := by ..." hallucinations
+# ---------------------------------------------------------------------------
+_DECL_RE = re.compile(
+    r'^(theorem|lemma|def|example|private\s+theorem|private\s+lemma)\s+'
+)
+_BY_RE = re.compile(r'\bby\b\s*(.*)', re.DOTALL)
+_FENCE_RE = re.compile(r'^```\w*\s*')
+_FENCE_END_RE = re.compile(r'\s*```$')
+
+
+def clean_tactic(raw: str) -> str:
+    """Post-process a model-generated tactic to extract a pure tactic.
+
+    Handles common failure modes:
+      - Model outputs 'theorem Foo : ... := by simp' instead of just 'simp'
+      - Model wraps output in code fences
+      - Model outputs quotes around the tactic
+    """
+    # Take first line, strip combinators
+    tactic = raw.strip().split("\n")[0].split("<;>")[0].strip()
+
+    # Strip code fences
+    tactic = _FENCE_RE.sub('', tactic)
+    tactic = _FENCE_END_RE.sub('', tactic)
+
+    # Strip wrapping quotes/backticks
+    if len(tactic) >= 2 and tactic[0] == tactic[-1] and tactic[0] in '`"\'':
+        tactic = tactic[1:-1]
+
+    # If the model output is a theorem/lemma declaration, extract the tactic after 'by'
+    if _DECL_RE.match(tactic):
+        by_match = _BY_RE.search(tactic)
+        if by_match:
+            tactic = by_match.group(1).strip()
+        else:
+            # Declaration without 'by' — not a usable tactic
+            return ""
+
+    # Remove leading 'by ' if present (we just want the tactic itself)
+    if tactic.startswith("by "):
+        tactic = tactic[3:].strip()
+
+    # Final cleanup
+    tactic = tactic.strip()
+
+    # Reject known-bad outputs
+    if tactic in ("sorry", "admit", ""):
+        return ""
+
+    return tactic
 
 
 # ---------------------------------------------------------------------------
@@ -98,9 +166,8 @@ def compute_step_logprob(
 ) -> float:
     """Compute the average per-token log-probability of *tactic* given *prompt*.
 
-    This is equivalent to teacher-forced scoring: we concatenate
-    prompt + tactic, run a forward pass, and extract the log-probs of
-    only the tactic tokens.
+    Teacher-forced scoring: concatenate prompt + tactic, forward pass,
+    extract log-probs of tactic tokens only.
     """
     full_text = prompt + tactic
     prompt_ids = tokenizer.encode(prompt, add_special_tokens=False)
@@ -112,39 +179,37 @@ def compute_step_logprob(
 
     input_ids = torch.tensor([full_ids], device=device)
     with torch.no_grad():
-        outputs = model(input_ids)
-        # logits shape: (1, seq_len, vocab_size)
-        logits = outputs.logits[0]  # (seq_len, vocab_size)
+        logits = model(input_ids).logits[0]  # (seq_len, vocab_size)
 
-    # Log-softmax over vocab
     log_probs = torch.log_softmax(logits, dim=-1)
 
-    # Extract log-probs for tactic tokens
-    # Token at position i predicts token i+1
     tactic_start = len(prompt_ids)
     total_lp = 0.0
     for i in range(tactic_len):
         token_idx = full_ids[tactic_start + i]
-        pos = tactic_start + i - 1  # logit at pos predicts token at pos+1
+        pos = tactic_start + i - 1
         if pos >= 0:
             total_lp += log_probs[pos, token_idx].item()
 
-    avg_lp = total_lp / tactic_len
-    return avg_lp
+    return total_lp / tactic_len
 
 
 # ---------------------------------------------------------------------------
 # Tactic generation with log-probs
 # ---------------------------------------------------------------------------
 def build_prompt(goal_str: str) -> str:
+    """Build a prompt that strongly constrains the model to output a pure tactic."""
     return (
         "### System:\n"
-        "You are a Lean 4 tactic generator. Given a goal state, "
-        "output exactly ONE Lean tactic that advances or solves the goal.\n"
-        "Rules:\n"
-        "- Output only the tactic text; no prose, quotes, or code fences.\n"
-        "- Single line only; no `by` blocks.\n"
-        "- Never use `sorry` or `admit`.\n"
+        "You are a Lean 4 tactic generator.\n"
+        "Given a proof goal state, output exactly ONE tactic that makes progress.\n"
+        "CRITICAL RULES:\n"
+        "- Output ONLY the tactic text (e.g., 'simp', 'ring', 'exact h').\n"
+        "- Do NOT output theorem/lemma/def declarations.\n"
+        "- Do NOT wrap in code fences, quotes, or markdown.\n"
+        "- Do NOT write 'by' before the tactic.\n"
+        "- Single line only. No semicolons, no multi-step combinator.\n"
+        "- Never use 'sorry' or 'admit'.\n"
         "### User:\n"
         f"{goal_str}\n\n"
         "### Assistant:\n"
@@ -182,20 +247,76 @@ def generate_tactics(
     seen = set()
     candidates = []
     for text in generated_texts:
-        tactic = text[len(prompt):].strip().split("\n")[0].split("<;>")[0].strip()
-        if not tactic or tactic == "sorry" or tactic in seen:
+        raw = text[len(prompt):]
+        tactic = clean_tactic(raw)
+        if not tactic or tactic in seen:
             continue
         seen.add(tactic)
         lp = compute_step_logprob(model, tokenizer, prompt, tactic, device)
         candidates.append({"tactic": tactic, "step_logprob": lp})
 
-    # Sort by log-prob descending (best first)
     candidates.sort(key=lambda x: x["step_logprob"], reverse=True)
     return candidates
 
 
 # ---------------------------------------------------------------------------
-# Instrumented search (offline mode — no Pantograph)
+# Pantograph server management
+# ---------------------------------------------------------------------------
+_server_cache: Dict[str, "Server"] = {}
+
+
+def get_server_for_theorem(
+    file_path: str, mathlib_path: str
+) -> Optional["Server"]:
+    """Create (or reuse) a Pantograph server for the given theorem's module.
+
+    The server imports the module that contains the theorem so that
+    env_inspect can find the theorem and goal_tactic can verify tactics
+    against the full Mathlib environment.
+    """
+    if not HAS_PANTOGRAPH:
+        return None
+
+    # Convert file path to import name:
+    #   "Mathlib/Analysis/BoxIntegral/Box/Basic.lean" -> "Mathlib.Analysis.BoxIntegral.Box.Basic"
+    import_name = file_path.replace(".lean", "").replace("/", ".")
+
+    # Check cache
+    if import_name in _server_cache:
+        return _server_cache[import_name]
+
+    project = Path(mathlib_path)
+    if not project.exists():
+        logger.warning(f"Mathlib project not found at {mathlib_path}")
+        return None
+
+    try:
+        server = Server(
+            imports=["Init", import_name],
+            project_path=project,
+        )
+        _server_cache[import_name] = server
+        return server
+    except Exception as e:
+        logger.warning(f"Server init failed for {import_name}: {e}")
+        return None
+
+
+def setup_goal(server: "Server", full_name: str) -> Tuple[object, str]:
+    """Use env_inspect to get the theorem's type, then start a goal.
+
+    Returns (goal_state_obj, initial_goal_str).
+    Raises on failure.
+    """
+    info = server.env_inspect(full_name)
+    goal_type = info["type"]["pp"]
+    goal_state = server.goal_start(goal_type)
+    initial_goal_str = str(goal_state)
+    return goal_state, initial_goal_str
+
+
+# ---------------------------------------------------------------------------
+# Instrumented search (offline mode - no Pantograph)
 # ---------------------------------------------------------------------------
 def search_offline(
     model,
@@ -203,14 +324,13 @@ def search_offline(
     device: torch.device,
     theorem_name: str,
     initial_goal: str,
+    file_path: str = "benchmark_dataset",
 ) -> dict:
     """Run search WITHOUT a Pantograph server.
 
-    Since we have no live Lean verifier, every tactic attempt is recorded
-    as 'tried but unverified'.  The tree still captures the model's
-    generation behaviour — which tactics it proposes, their log-probs,
-    and how confident it is — which is exactly what the hallucination
-    analysis needs.
+    Uses the benchmark's state_before as the goal text for tactic generation.
+    Cannot verify tactics, but captures model behaviour (tactics, log-probs,
+    confidence) which is what the hallucination analysis needs.
     """
     t0 = time.time()
     expansion_counter = 0
@@ -225,8 +345,7 @@ def search_offline(
 
     # BFS-like expansion: expand nodes level by level
     frontier = [root]
-
-    max_depth = 6  # Keep trees manageable in offline mode
+    max_depth = 6
     total_nodes = 1
 
     for depth in range(1, max_depth + 1):
@@ -241,7 +360,6 @@ def search_offline(
             )
 
             if not candidates:
-                # No tactic generated — dead end
                 err_node = TreeNode(
                     node_type="ErrorNode",
                     tactic="<no_tactic_generated>",
@@ -285,11 +403,11 @@ def search_offline(
     return {
         "theorem_name": theorem_name,
         "theorem_statement": initial_goal,
-        "file_path": "benchmark_dataset",
-        "status": "Failed",  # Offline mode cannot verify proofs
+        "file_path": file_path,
+        "status": "Failed",  # Offline cannot verify
         "proof": None,
         "total_time": total_time,
-        "actor_time": total_time * 0.8,  # Approximate split
+        "actor_time": total_time * 0.8,
         "environment_time": total_time * 0.2,
         "num_total_nodes": total_nodes,
         "num_searched_nodes": expansion_counter,
@@ -298,7 +416,7 @@ def search_offline(
 
 
 # ---------------------------------------------------------------------------
-# Instrumented search (online mode — with Pantograph)
+# Instrumented search (online mode - with Pantograph + mathlib4)
 # ---------------------------------------------------------------------------
 def search_online(
     model,
@@ -306,55 +424,32 @@ def search_online(
     device: torch.device,
     server: "Server",
     theorem_name: str,
-    initial_goal: str,
+    goal_state_obj,
+    initial_goal_str: str,
+    file_path: str = "benchmark_dataset",
 ) -> dict:
-    """Run search WITH a live Pantograph server for tactic verification.
+    """DFS search with REAL Pantograph verification + full tree tracking.
 
-    This matches the BaseProver.search() logic but builds a proper tree
-    with log-probs for export.
+    Identical logic to run_modern_eval.py's instrumented_search().
     """
     t0 = time.time()
     actor_time = 0.0
     env_time = 0.0
     expansion_counter = 0
 
-    # Start goal in Pantograph
-    try:
-        goal_state = server.goal_start(initial_goal)
-    except Exception as e:
-        # Cannot even start the goal — create a minimal error tree
-        root = TreeNode(
-            node_type="ErrorNode",
-            state_text=initial_goal,
-            error_message=f"goal_start failed: {e}",
-        )
-        return {
-            "theorem_name": theorem_name,
-            "theorem_statement": initial_goal,
-            "file_path": "benchmark_dataset",
-            "status": "Failed",
-            "proof": None,
-            "total_time": time.time() - t0,
-            "actor_time": 0.0,
-            "environment_time": 0.0,
-            "num_total_nodes": 1,
-            "num_searched_nodes": 0,
-            "search_tree": root.to_dict(),
-        }
-
     root = TreeNode(
         node_type="InternalNode",
-        state_text=str(goal_state),
+        state_text=initial_goal_str,
         depth=0,
         order_of_expansion=0,
     )
     expansion_counter += 1
+    total_nodes = 1
 
-    # Stack-based DFS (matching BaseProver.search)
-    stack = [(goal_state, root, 0)]  # (pantograph_state, tree_node, trials)
+    # Stack: (pantograph_goal_state, tree_node, trial_index)
+    stack = [(goal_state_obj, root, 0)]
     status = "Failed"
     proof_tactics = None
-    total_nodes = 1
 
     for i_step in range(MAX_STEPS):
         if not stack:
@@ -362,11 +457,10 @@ def search_online(
 
         gs, current_node, trials = stack[-1]
 
-        # Check if solved
+        # Check solved
         if len(gs.goals) == 0:
             current_node.node_type = "ProofFinishedNode"
             status = "Proved"
-            # Collect proof path
             proof_tactics = _extract_proof_path(root)
             break
 
@@ -374,19 +468,19 @@ def search_online(
             stack.pop()
             continue
 
-        # Generate tactic candidates
         goal_str = str(gs)
-        t_actor = time.time()
+
+        # Generate tactic candidates
+        t_a = time.time()
         candidates = generate_tactics(
-            model, tokenizer, goal_str, device, n=NUM_TACTIC_CANDIDATES
+            model, tokenizer, goal_str, device, n=NUM_TACTIC_CANDIDATES,
         )
-        actor_time += time.time() - t_actor
+        actor_time += time.time() - t_a
 
         if not candidates:
             stack.pop()
             continue
 
-        # Try the next untried candidate
         cand = candidates[min(trials, len(candidates) - 1)]
         stack[-1] = (gs, current_node, trials + 1)
 
@@ -396,11 +490,11 @@ def search_online(
         depth = current_node.depth + 1
         ppl = math.exp(-cum_lp / depth) if cum_lp < 0 else None
 
-        # Try applying the tactic in Pantograph
-        t_env = time.time()
+        # Apply tactic in Pantograph (REAL verification)
+        t_e = time.time()
         try:
             next_gs = server.goal_tactic(gs, tactic)
-            env_time += time.time() - t_env
+            env_time += time.time() - t_e
 
             child = TreeNode(
                 node_type="InternalNode",
@@ -418,43 +512,41 @@ def search_online(
             stack.append((next_gs, child, 0))
 
         except TacticFailure as e:
-            env_time += time.time() - t_env
-            err_child = TreeNode(
+            env_time += time.time() - t_e
+            err = TreeNode(
                 node_type="ErrorNode",
                 tactic=tactic,
                 step_logprob=step_lp,
                 cumulative_logprob=cum_lp,
-                depth=depth,
-                ppl=ppl,
+                depth=depth, ppl=ppl,
                 order_of_expansion=expansion_counter,
                 error_message=str(e),
             )
             expansion_counter += 1
-            current_node.children.append(err_child)
+            current_node.children.append(err)
             total_nodes += 1
 
         except (ServerError, Exception) as e:
-            env_time += time.time() - t_env
-            err_child = TreeNode(
+            env_time += time.time() - t_e
+            err = TreeNode(
                 node_type="ErrorNode",
                 tactic=tactic,
                 step_logprob=step_lp,
                 cumulative_logprob=cum_lp,
-                depth=depth,
-                ppl=ppl,
+                depth=depth, ppl=ppl,
                 order_of_expansion=expansion_counter,
                 error_message=str(e),
             )
             expansion_counter += 1
-            current_node.children.append(err_child)
+            current_node.children.append(err)
             total_nodes += 1
 
     total_time = time.time() - t0
 
     return {
         "theorem_name": theorem_name,
-        "theorem_statement": initial_goal,
-        "file_path": "benchmark_dataset",
+        "theorem_statement": initial_goal_str,
+        "file_path": file_path,
         "status": status,
         "proof": proof_tactics,
         "total_time": total_time,
@@ -521,48 +613,82 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(device)
     model.eval()
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token_id = tokenizer.eos_token_id
     print(f"Model loaded on {device}")
 
-    # ---- Try to start Pantograph server ----
-    server = None
-    if HAS_PANTOGRAPH:
-        try:
-            server = Server()
-            print("Pantograph server started (online mode)")
-        except Exception as e:
-            print(f"Pantograph unavailable ({e}), falling back to offline mode")
-            server = None
+    # ---- Check mathlib4 project path ----
+    use_online = False
+    mathlib_path = MATHLIB_PROJECT_PATH
+    if mathlib_path and Path(mathlib_path).exists() and HAS_PANTOGRAPH:
+        print(f"Mathlib4 project found at: {mathlib_path}")
+        use_online = True
+    elif mathlib_path and not Path(mathlib_path).exists():
+        print(f"WARNING: MATHLIB_PROJECT_PATH={mathlib_path} does not exist.")
+        print("  Run `bash setup_mathlib4.sh` to set up mathlib4.")
+        print("  Falling back to OFFLINE mode.")
+    elif not HAS_PANTOGRAPH:
+        print("WARNING: Pantograph not installed. Using OFFLINE mode.")
     else:
-        print("Pantograph not installed, using offline mode")
+        print("MATHLIB_PROJECT_PATH not set. Using OFFLINE mode.")
 
-    mode = "online" if server else "offline"
+    mode = "online" if use_online else "offline"
     print(f"Mode: {mode}")
     print(f"Search trees will be saved to: {LOG_DIR}/")
     print("=" * 60)
 
     # ---- Evaluate ----
-    stats = {"proved": 0, "failed": 0, "error": 0}
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    stats = {"proved": 0, "failed": 0, "error": 0, "skipped": 0}
 
     for i, item in enumerate(dataset):
         name = item.get("full_name", f"theorem_{i}")
+        file_path = item.get("file_path", "unknown")
         traced = item.get("traced_tactics", [])
         if not traced:
+            stats["skipped"] += 1
             continue
-        goal = traced[0].get("state_before", "")
-        if not goal:
+        benchmark_goal = traced[0].get("state_before", "")
+        if not benchmark_goal:
+            stats["skipped"] += 1
             continue
 
         print(f"\n[{i+1}/{len(dataset)}] {name}")
-        print(f"  Goal: {goal[:120]}{'...' if len(goal) > 120 else ''}")
+        print(f"  File: {file_path}")
 
         try:
-            if server is not None:
-                tree_dict = search_online(
-                    model, tokenizer, device, server, name, goal,
-                )
+            if use_online:
+                # --- Online mode: real Pantograph verification ---
+                server = get_server_for_theorem(file_path, mathlib_path)
+                if server is None:
+                    print("  Server init failed, falling back to offline for this theorem")
+                    tree_dict = search_offline(
+                        model, tokenizer, device, name, benchmark_goal, file_path,
+                    )
+                else:
+                    # Use env_inspect to get the theorem's type for goal_start
+                    try:
+                        goal_state, initial_goal_str = setup_goal(server, name)
+                        print(f"  Goal: {initial_goal_str[:120]}...")
+
+                        tree_dict = search_online(
+                            model, tokenizer, device,
+                            server, name,
+                            goal_state, initial_goal_str,
+                            file_path,
+                        )
+                    except Exception as e:
+                        print(f"  env_inspect/goal_start failed: {e}")
+                        print(f"  Falling back to offline (using benchmark state_before)")
+                        print(f"  Goal: {benchmark_goal[:120]}...")
+                        tree_dict = search_offline(
+                            model, tokenizer, device, name, benchmark_goal, file_path,
+                        )
             else:
+                # --- Offline mode ---
+                print(f"  Goal: {benchmark_goal[:120]}...")
                 tree_dict = search_offline(
-                    model, tokenizer, device, name, goal,
+                    model, tokenizer, device, name, benchmark_goal, file_path,
                 )
 
             out_path = export_tree(tree_dict, LOG_DIR)
@@ -572,19 +698,25 @@ def main():
 
             if status == "Proved":
                 stats["proved"] += 1
-                print(f"  --> Proved  ({n_nodes} nodes, {t:.1f}s)  -> {out_path}")
+                print(f"  --> Proved  ({n_nodes} nodes, {t:.1f}s)")
+                if tree_dict["proof"]:
+                    for tac in tree_dict["proof"]:
+                        print(f"      {tac}")
             else:
                 stats["failed"] += 1
-                print(f"  --> Failed  ({n_nodes} nodes, {t:.1f}s)  -> {out_path}")
+                print(f"  --> Failed  ({n_nodes} nodes, {t:.1f}s)")
+
+            print(f"  Tree: {out_path}")
 
         except Exception as e:
             stats["error"] += 1
             print(f"  --> Error: {e}")
-            # Still export a minimal error tree
+            import traceback
+            traceback.print_exc()
             err_tree = {
                 "theorem_name": name,
-                "theorem_statement": goal,
-                "file_path": "benchmark_dataset",
+                "theorem_statement": benchmark_goal,
+                "file_path": file_path,
                 "status": "Failed",
                 "proof": None,
                 "total_time": 0.0,
@@ -594,7 +726,7 @@ def main():
                 "num_searched_nodes": 0,
                 "search_tree": TreeNode(
                     node_type="ErrorNode",
-                    state_text=goal,
+                    state_text=benchmark_goal,
                     error_message=str(e),
                 ).to_dict(),
             }
@@ -604,10 +736,13 @@ def main():
     total = stats["proved"] + stats["failed"] + stats["error"]
     print("\n" + "=" * 60)
     print(f"EVALUATION COMPLETE  ({mode} mode)")
-    print(f"  Total:   {total}")
-    print(f"  Proved:  {stats['proved']}")
-    print(f"  Failed:  {stats['failed']}")
-    print(f"  Error:   {stats['error']}")
+    print(f"  Total:    {total}")
+    print(f"  Proved:   {stats['proved']}")
+    print(f"  Failed:   {stats['failed']}")
+    print(f"  Error:    {stats['error']}")
+    print(f"  Skipped:  {stats['skipped']}")
+    if total > 0:
+        print(f"  Pass@1:   {stats['proved']/total*100:.1f}%")
     print(f"\nSearch trees saved to: {LOG_DIR}/")
     print(f"Next step: python search_analysis_master.py --input_dir {LOG_DIR}")
 
