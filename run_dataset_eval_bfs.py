@@ -16,6 +16,7 @@ import json
 import math
 import pkgutil
 import re
+import site
 import sys
 import types
 from pathlib import Path
@@ -54,6 +55,26 @@ def _load_core_symbols() -> None:
     LeanGitRepo = _LeanGitRepo
     Pos = _Pos
     Theorem = _Theorem
+
+
+def _import_site_package(pkg_name: str):
+    """Load a package directly from site-packages to avoid local shadowing."""
+    for base in site.getsitepackages():
+        pkg_dir = Path(base) / pkg_name
+        init_py = pkg_dir / "__init__.py"
+        if not init_py.exists():
+            continue
+        spec = importlib.util.spec_from_file_location(
+            f"{pkg_name}__sitepkg",
+            str(init_py),
+            submodule_search_locations=[str(pkg_dir)],
+        )
+        if spec is None or spec.loader is None:
+            continue
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    return None
 
 
 def _patch_lean_dojo_exports() -> None:
@@ -111,9 +132,17 @@ def _patch_lean_dojo_exports() -> None:
     try:
         import lean_dojo as ld
 
-        candidate_pkgs.append(ld)
+        repo_root = Path(__file__).resolve().parent
+        ld_file = Path(getattr(ld, "__file__", "")).resolve()
+        if str(ld_file).startswith(str(repo_root)):
+            # Local repository's lean_dojo package shadows installed runtime package.
+            ld = _import_site_package("lean_dojo")
+        if ld is not None:
+            candidate_pkgs.append(ld)
     except Exception:
-        pass
+        ld = _import_site_package("lean_dojo")
+        if ld is not None:
+            candidate_pkgs.append(ld)
 
     resolved = {}
 
