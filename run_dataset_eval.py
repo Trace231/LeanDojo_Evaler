@@ -1,5 +1,5 @@
 """
-run_dataset_eval.py
+run_dataset_eval.py废弃的
 ===================
 Instrumented search evaluation on the LeanDojo benchmark with REAL
 Pantograph verification against a built mathlib4 project.
@@ -68,7 +68,9 @@ LOG_DIR = Path("logs/search_trees")
 
 MAX_STEPS = 100            # Max search iterations per theorem
 MAX_TRIALS_PER_GOAL = 5    # Max tactic attempts per goal before backtracking
-NUM_TACTIC_CANDIDATES = 5  # Tactics to sample per step
+NUM_TACTIC_CANDIDATES = 8  # Tactics to sample per step (lightly increased)
+GEN_TEMPERATURE = 0.75     # Light exploration boost
+GEN_TOP_P = 0.92
 MAX_THEOREMS = 50          # How many theorems to evaluate (0 = all)
 
 
@@ -197,8 +199,24 @@ def compute_step_logprob(
 # ---------------------------------------------------------------------------
 # Tactic generation with log-probs
 # ---------------------------------------------------------------------------
-def build_prompt(goal_str: str) -> str:
-    """Build a prompt that strongly constrains the model to output a pure tactic."""
+def build_prompt(
+    goal_str: str,
+    theorem_name: str = "",
+    file_path: str = "",
+    tactic_history: Optional[List[str]] = None,
+) -> str:
+    """Original prompt style + lightweight context block."""
+    history_block = ""
+    if tactic_history:
+        clipped = tactic_history[-12:]
+        history_lines = "\n".join(f"- {t}" for t in clipped)
+        history_block = (
+            "Context:\n"
+            f"- theorem: {theorem_name or 'unknown'}\n"
+            f"- file: {file_path or 'unknown'}\n"
+            "- previous tactics:\n"
+            f"{history_lines}\n\n"
+        )
     return (
         "### System:\n"
         "You are a Lean 4 tactic generator.\n"
@@ -211,20 +229,33 @@ def build_prompt(goal_str: str) -> str:
         "- Single line only. No semicolons, no multi-step combinator.\n"
         "- Never use 'sorry' or 'admit'.\n"
         "### User:\n"
+        f"{history_block}"
         f"{goal_str}\n\n"
         "### Assistant:\n"
     )
 
 
 def generate_tactics(
-    model, tokenizer, goal_str: str, device: torch.device, n: int = 5,
+    model,
+    tokenizer,
+    goal_str: str,
+    device: torch.device,
+    n: int = 5,
+    theorem_name: str = "",
+    file_path: str = "",
+    tactic_history: Optional[List[str]] = None,
 ) -> List[dict]:
     """Generate *n* tactic candidates and score each one.
 
     Returns a list of dicts: [{"tactic": str, "step_logprob": float}, ...]
     sorted by descending log-prob (best first).
     """
-    prompt = build_prompt(goal_str)
+    prompt = build_prompt(
+        goal_str,
+        theorem_name=theorem_name,
+        file_path=file_path,
+        tactic_history=tactic_history,
+    )
     inputs = tokenizer(
         prompt, return_tensors="pt", truncation=True, max_length=512
     ).to(device)
@@ -236,8 +267,8 @@ def generate_tactics(
             max_new_tokens=64,
             num_return_sequences=n,
             do_sample=True,
-            temperature=0.7,
-            top_p=0.9,
+            temperature=GEN_TEMPERATURE,
+            top_p=GEN_TOP_P,
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=tokenizer.eos_token_id,
         )
@@ -344,19 +375,26 @@ def search_offline(
     expansion_counter += 1
 
     # BFS-like expansion: expand nodes level by level
-    frontier = [root]
+    frontier: List[Tuple[TreeNode, List[str]]] = [(root, [])]
     max_depth = 6
     total_nodes = 1
 
     for depth in range(1, max_depth + 1):
         next_frontier = []
-        for parent in frontier:
+        for parent, hist in frontier:
             if parent.node_type != "InternalNode":
                 continue
 
             goal_str = parent.state_text or initial_goal
             candidates = generate_tactics(
-                model, tokenizer, goal_str, device, n=NUM_TACTIC_CANDIDATES
+                model,
+                tokenizer,
+                goal_str,
+                device,
+                n=NUM_TACTIC_CANDIDATES,
+                theorem_name=theorem_name,
+                file_path=file_path,
+                tactic_history=hist,
             )
 
             if not candidates:
@@ -391,7 +429,7 @@ def search_offline(
                 )
                 expansion_counter += 1
                 parent.children.append(child)
-                next_frontier.append(child)
+                next_frontier.append((child, hist + [tactic]))
                 total_nodes += 1
 
         frontier = next_frontier
@@ -446,8 +484,8 @@ def search_online(
     expansion_counter += 1
     total_nodes = 1
 
-    # Stack: (pantograph_goal_state, tree_node, trial_index)
-    stack = [(goal_state_obj, root, 0)]
+    # Stack: (pantograph_goal_state, tree_node, trial_index, tactic_history)
+    stack = [(goal_state_obj, root, 0, [])]
     status = "Failed"
     proof_tactics = None
 
@@ -455,7 +493,7 @@ def search_online(
         if not stack:
             break
 
-        gs, current_node, trials = stack[-1]
+        gs, current_node, trials, hist = stack[-1]
 
         # Check solved
         if len(gs.goals) == 0:
@@ -473,7 +511,14 @@ def search_online(
         # Generate tactic candidates
         t_a = time.time()
         candidates = generate_tactics(
-            model, tokenizer, goal_str, device, n=NUM_TACTIC_CANDIDATES,
+            model,
+            tokenizer,
+            goal_str,
+            device,
+            n=NUM_TACTIC_CANDIDATES,
+            theorem_name=theorem_name,
+            file_path=file_path,
+            tactic_history=hist,
         )
         actor_time += time.time() - t_a
 
@@ -482,7 +527,7 @@ def search_online(
             continue
 
         cand = candidates[min(trials, len(candidates) - 1)]
-        stack[-1] = (gs, current_node, trials + 1)
+        stack[-1] = (gs, current_node, trials + 1, hist)
 
         tactic = cand["tactic"]
         step_lp = cand["step_logprob"]
@@ -509,7 +554,7 @@ def search_online(
             expansion_counter += 1
             current_node.children.append(child)
             total_nodes += 1
-            stack.append((next_gs, child, 0))
+            stack.append((next_gs, child, 0, hist + [tactic]))
 
         except TacticFailure as e:
             env_time += time.time() - t_e
