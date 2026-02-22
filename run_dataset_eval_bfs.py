@@ -57,6 +57,26 @@ def _load_core_symbols() -> None:
 
 
 def _patch_lean_dojo_exports() -> None:
+    def _is_valid_symbol(name: str, obj) -> bool:
+        if obj is None:
+            return False
+        if name == "Dojo":
+            return callable(obj)
+        if name in {
+            "DojoCrashError",
+            "DojoInitError",
+            "DojoTacticTimeoutError",
+            "LeanError",
+            "ProofFinished",
+            "ProofGivenUp",
+            "TacticState",
+            "LeanGitRepo",
+            "Pos",
+            "Theorem",
+        }:
+            return isinstance(obj, type)
+        return True
+
     """
     Some lean_dojo_v2 builds expose tracing symbols only, while BFSP modules expect
     runtime Dojo symbols on `lean_dojo_v2.lean_dojo`. Patch them from `lean_dojo`.
@@ -76,7 +96,11 @@ def _patch_lean_dojo_exports() -> None:
         "Pos",
         "Theorem",
     ]
-    missing = [name for name in required if not hasattr(ld2, name)]
+    missing = [
+        name
+        for name in required
+        if not hasattr(ld2, name) or not _is_valid_symbol(name, getattr(ld2, name))
+    ]
     if not missing:
         return
 
@@ -97,7 +121,9 @@ def _patch_lean_dojo_exports() -> None:
     for pkg in candidate_pkgs:
         for name in missing:
             if name not in resolved and hasattr(pkg, name):
-                resolved[name] = getattr(pkg, name)
+                cand = getattr(pkg, name)
+                if _is_valid_symbol(name, cand):
+                    resolved[name] = cand
 
     # 2) Recursively scan submodules for unresolved symbols.
     unresolved = [name for name in missing if name not in resolved]
@@ -116,13 +142,20 @@ def _patch_lean_dojo_exports() -> None:
                 continue
             for name in list(unresolved):
                 if hasattr(mod, name):
-                    resolved[name] = getattr(mod, name)
-                    unresolved.remove(name)
+                    cand = getattr(mod, name)
+                    if _is_valid_symbol(name, cand):
+                        resolved[name] = cand
+                        unresolved.remove(name)
 
     for name, obj in resolved.items():
-        setattr(ld2, name, obj)
+        if _is_valid_symbol(name, obj):
+            setattr(ld2, name, obj)
 
-    still_missing = [name for name in missing if not hasattr(ld2, name)]
+    still_missing = [
+        name
+        for name in missing
+        if not hasattr(ld2, name) or not _is_valid_symbol(name, getattr(ld2, name))
+    ]
     if still_missing:
         # Version-compatibility aliases for known renamed/removed symbols.
         alias_candidates = {
@@ -134,9 +167,11 @@ def _patch_lean_dojo_exports() -> None:
         for target in list(still_missing):
             for alias in alias_candidates.get(target, []):
                 if hasattr(ld2, alias):
-                    setattr(ld2, target, getattr(ld2, alias))
-                    break
-            if hasattr(ld2, target):
+                    alias_obj = getattr(ld2, alias)
+                    if _is_valid_symbol(target, alias_obj):
+                        setattr(ld2, target, alias_obj)
+                        break
+            if hasattr(ld2, target) and _is_valid_symbol(target, getattr(ld2, target)):
                 still_missing.remove(target)
 
     if still_missing:
@@ -169,7 +204,11 @@ def _patch_lean_dojo_exports() -> None:
             setattr(ld2, "ProofGivenUp", ProofGivenUp)
             still_missing.remove("ProofGivenUp")
 
-    still_missing = [name for name in missing if not hasattr(ld2, name)]
+    still_missing = [
+        name
+        for name in missing
+        if not hasattr(ld2, name) or not _is_valid_symbol(name, getattr(ld2, name))
+    ]
     if still_missing:
         pkg_names = [pkg.__name__ for pkg in candidate_pkgs]
         raise RuntimeError(
