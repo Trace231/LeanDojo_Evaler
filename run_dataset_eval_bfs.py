@@ -10,6 +10,7 @@ This script follows framework constraints strictly:
 
 import argparse
 import importlib.util
+import inspect
 import json
 import math
 import re
@@ -21,7 +22,6 @@ from typing import List, Tuple
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from lean_dojo_v2.lean_agent.generator.model import TacticGenerator
 from lean_dojo_v2.lean_dojo import LeanGitRepo, Pos, Theorem
 
 
@@ -78,10 +78,7 @@ def _load_best_first_search_prover():
         from lean_dojo_v2.lean_agent.prover.proof_search import BestFirstSearchProver
 
         return BestFirstSearchProver
-    except ModuleNotFoundError as ex:
-        if "lean_dojo_v2.lean_agent.prover.evaluate" not in str(ex):
-            raise
-
+    except ModuleNotFoundError:
         import lean_dojo_v2
 
         pkg_root = Path(lean_dojo_v2.__file__).resolve().parent
@@ -196,7 +193,7 @@ def _step_logprob(
     return total_lp / tactic_len
 
 
-class DeepSeekGenerator(TacticGenerator):
+class DeepSeekGenerator:
     """Generator adapter compatible with LeanDojo's TacticGenerator interface."""
 
     def __init__(
@@ -351,14 +348,17 @@ def main() -> None:
         model_name=args.model_name,
         num_return_sequences=max(2, args.num_sampled_tactics),
     )
-    prover = BestFirstSearchProver(
+    prover_kwargs = dict(
         tac_gen=gen,
         timeout=args.timeout,
         max_expansions=args.max_expansions,
         num_sampled_tactics=args.num_sampled_tactics,
         debug=False,
-        analysis_event_dir=args.analysis_event_dir,
     )
+    sig = inspect.signature(BestFirstSearchProver.__init__)
+    if "analysis_event_dir" in sig.parameters:
+        prover_kwargs["analysis_event_dir"] = args.analysis_event_dir
+    prover = BestFirstSearchProver(**prover_kwargs)
 
     stats = {"proved": 0, "failed": 0, "init_error": 0}
     for idx, item in enumerate(dataset, start=1):
