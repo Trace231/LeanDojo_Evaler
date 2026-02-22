@@ -14,6 +14,7 @@ import importlib.util
 import inspect
 import json
 import math
+import os
 import pkgutil
 import re
 import site
@@ -109,6 +110,53 @@ def _build_theorem_like(item: dict, LeanGitRepoCls, PosCls, TheoremCls):
         elif name == "theorem_statement":
             kwargs[name] = item.get("theorem_statement")
     return TheoremCls(**kwargs), repo, start
+
+
+def _cache_root_dir() -> Path:
+    try:
+        from lean_dojo_v2.utils.constants import CACHE_DIR
+
+        return Path(CACHE_DIR)
+    except Exception:
+        return Path.home() / ".cache" / "lean_dojo"
+
+
+def _repair_repo_cache_layout(repo) -> bool:
+    """
+    Fix common remote-cache layout mismatch:
+    expected: <cache>/<dirname>/<repo.name>_d
+    got:      <cache>/<dirname>/<repo.name>
+    """
+    try:
+        dirname = repo.get_cache_dirname()
+    except Exception:
+        return False
+
+    root = _cache_root_dir()
+    base = root / dirname
+    normal = base / repo.name
+    with_deps = base / f"{repo.name}_d"
+
+    if not base.exists():
+        return False
+    if with_deps.exists():
+        return False
+    if not normal.exists():
+        return False
+
+    try:
+        os.symlink(normal, with_deps, target_is_directory=True)
+        print(f"[cache-fix] created symlink: {with_deps} -> {normal}")
+        return True
+    except FileExistsError:
+        return True
+    except OSError:
+        # Fallback for filesystems where symlink may be disallowed.
+        import shutil
+
+        shutil.copytree(normal, with_deps)
+        print(f"[cache-fix] copied dir: {normal} -> {with_deps}")
+        return True
 
 
 def _import_site_package(pkg_name: str):
@@ -600,15 +648,28 @@ def main() -> None:
         full_name = item["full_name"]
         thm, repo, pos = _build_theorem_like(item, LeanGitRepo, Pos, Theorem)
 
+        repaired_and_retried = False
         try:
             result = prover.search(repo=repo, thm=thm, pos=pos)
         except AssertionError as ex:
-            stats["init_error"] += 1
-            print(
-                f"[{idx}/{len(dataset)}] INIT_ERROR {full_name} "
-                f"(Dojo assertion: {ex})"
-            )
-            continue
+            if _repair_repo_cache_layout(repo):
+                repaired_and_retried = True
+                try:
+                    result = prover.search(repo=repo, thm=thm, pos=pos)
+                except Exception as ex2:
+                    stats["init_error"] += 1
+                    print(
+                        f"[{idx}/{len(dataset)}] INIT_ERROR {full_name} "
+                        f"(Dojo assertion after cache-fix: {type(ex2).__name__}: {ex2})"
+                    )
+                    continue
+            else:
+                stats["init_error"] += 1
+                print(
+                    f"[{idx}/{len(dataset)}] INIT_ERROR {full_name} "
+                    f"(Dojo assertion: {ex})"
+                )
+                continue
         except Exception as ex:
             stats["init_error"] += 1
             print(f"[{idx}/{len(dataset)}] INIT_ERROR {full_name} ({type(ex).__name__}: {ex})")
@@ -625,7 +686,9 @@ def main() -> None:
         print(
             f"[{idx}/{len(dataset)}] {result.status.value:<6} {full_name} "
             f"(expanded={result.num_searched_nodes}, total_nodes={result.num_total_nodes}, "
-            f"time={result.total_time:.2f}s)"
+            f"time={result.total_time:.2f}s"
+            + (", cache_fixed=1" if repaired_and_retried else "")
+            + ")"
         )
 
     total = sum(stats.values())
