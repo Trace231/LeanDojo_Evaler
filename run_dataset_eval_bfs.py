@@ -448,7 +448,35 @@ def _clean_tactic(raw: str) -> str:
     return tactic
 
 
-def _build_prompt(goal_str: str) -> str:
+def _build_prompt(
+    goal_str: str,
+    theorem_full_name: str,
+    file_path: str,
+    theorem_statement: str = "",
+    tactic_history: List[str] | None = None,
+    mode: str = "state_comment",
+) -> str:
+    history_lines = ""
+    if tactic_history:
+        clipped = tactic_history[-16:]
+        history_lines = "\n".join(f"  {t}" for t in clipped)
+    statement_line = theorem_statement.strip() if theorem_statement else "_"
+
+    if mode == "state_comment":
+        return (
+            "-- You are a Lean 4 tactic generator.\n"
+            "-- Output exactly ONE next tactic line. No explanation.\n"
+            "-- No declarations, no comments, no `by`, no `sorry`, no markdown.\n"
+            f"-- theorem: {theorem_full_name}\n"
+            f"-- file: {file_path}\n"
+            f"-- statement: {statement_line}\n"
+            "theorem _tmp : Prop := by\n"
+            f"{history_lines}\n"
+            "/- Tactic State:\n"
+            f"{goal_str}\n"
+            "-/\n"
+        )
+
     return (
         "### System:\n"
         "You are a Lean 4 tactic generator for interactive proof search.\n"
@@ -511,6 +539,8 @@ class DeepSeekGenerator:
         top_p: float = 0.9,
         max_new_tokens: int = 64,
         repetition_penalty: float = 1.05,
+        prompt_mode: str = "state_comment",
+        theorem_statement_map: dict | None = None,
     ) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -540,6 +570,8 @@ class DeepSeekGenerator:
         self.top_p = top_p
         self.max_new_tokens = max_new_tokens
         self.repetition_penalty = repetition_penalty
+        self.prompt_mode = prompt_mode
+        self.theorem_statement_map = theorem_statement_map or {}
 
     def generate(
         self,
@@ -548,8 +580,16 @@ class DeepSeekGenerator:
         theorem_full_name: str,
         theorem_pos: Pos,
         num_samples: int,
+        tactic_history: List[str] | None = None,
     ) -> List[Tuple[str, float]]:
-        prompt = _build_prompt(state)
+        prompt = _build_prompt(
+            goal_str=state,
+            theorem_full_name=theorem_full_name,
+            file_path=file_path,
+            theorem_statement=self.theorem_statement_map.get(theorem_full_name, ""),
+            tactic_history=tactic_history,
+            mode=self.prompt_mode,
+        )
         n = max(num_samples, self.num_return_sequences)
         inputs = self.tokenizer(
             prompt, return_tensors="pt", truncation=True, max_length=512
@@ -630,6 +670,13 @@ def main() -> None:
     parser.add_argument("--repetition_penalty", type=float, default=1.05)
     parser.add_argument("--max_theorems", type=int, default=50)
     parser.add_argument(
+        "--prompt_mode",
+        type=str,
+        default="state_comment",
+        choices=["state_comment", "chat"],
+        help="Prompt style for DeepSeek generation.",
+    )
+    parser.add_argument(
         "--dtype",
         type=str,
         default="bf16",
@@ -676,6 +723,9 @@ def main() -> None:
         dataset = json.load(f)
     if args.max_theorems > 0:
         dataset = dataset[: args.max_theorems]
+    theorem_statement_map = {
+        item["full_name"]: item.get("theorem_statement", "") for item in dataset
+    }
 
     BestFirstSearchProver = _load_best_first_search_prover()
 
@@ -691,6 +741,8 @@ def main() -> None:
         top_p=args.top_p,
         max_new_tokens=args.max_new_tokens,
         repetition_penalty=args.repetition_penalty,
+        prompt_mode=args.prompt_mode,
+        theorem_statement_map=theorem_statement_map,
     )
     prover_kwargs = dict(
         tac_gen=gen,

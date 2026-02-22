@@ -2,6 +2,7 @@
 
 import asyncio
 from collections import defaultdict
+import inspect
 import json
 import os
 import sys
@@ -372,7 +373,7 @@ class BestFirstSearchProver:
             ts = search_node.state.pp
         else:
             ts = search_node.state.unsolved_tactic_state
-        suggestions = await self._generate_tactics(ts)
+        suggestions = await self._generate_tactics(ts, search_node)
         self._analysis_generated_calls += 1
         self._analysis_total_suggestions += len(suggestions)
         if len(suggestions) == 0:
@@ -423,7 +424,28 @@ class BestFirstSearchProver:
             self.check_invariants()
 
     @torch.no_grad()
-    async def _generate_tactics(self, ts: str) -> List[Tuple[str, float]]:
+    def _extract_tactic_history(self, node: InternalNode, max_steps: int = 24) -> List[str]:
+        """Reconstruct one root-to-node tactic chain from incoming edges."""
+        history: List[str] = []
+        cur: Optional[InternalNode] = node
+        steps = 0
+        while (
+            cur is not None
+            and isinstance(cur, InternalNode)
+            and len(cur.in_edges) > 0
+            and steps < max_steps
+        ):
+            edge = cur.in_edges[0]
+            history.append(edge.tactic)
+            src = edge.src
+            cur = src if isinstance(src, InternalNode) else None
+            steps += 1
+        history.reverse()
+        return history
+
+    async def _generate_tactics(
+        self, ts: str, node: Optional[InternalNode] = None
+    ) -> List[Tuple[str, float]]:
         t0 = time.monotonic()
 
         path = str(self.theorem.file_path)
@@ -431,13 +453,23 @@ class BestFirstSearchProver:
         if self.theorem.repo != self.repo:
             path = self.theorem.repo.get_packages_dir() / self.theorem.repo.name / path
 
-        suggestions = self.tac_gen.generate(
+        gen_kwargs = dict(
             state=ts,
             file_path=path,
             theorem_full_name=self.theorem.full_name,
             theorem_pos=self.position,
             num_samples=self.num_sampled_tactics,
         )
+        # Backward-compatible: only pass history when generator supports it.
+        if node is not None:
+            try:
+                sig = inspect.signature(self.tac_gen.generate)
+                if "tactic_history" in sig.parameters:
+                    gen_kwargs["tactic_history"] = self._extract_tactic_history(node)
+            except Exception:
+                pass
+
+        suggestions = self.tac_gen.generate(**gen_kwargs)
 
         self.actor_time += time.monotonic() - t0
 
