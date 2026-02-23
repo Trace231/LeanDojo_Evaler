@@ -1,0 +1,13 @@
+============================================================
+BASIC STATISTICS
+============================================================
+Total theorems        : 20
+  Proved              : 6
+  Failed / Open       : 14
+Avg expansions (proved): 1.8
+Avg expansions (failed): 2.1
+
+--- Failure Classification ---
+  Timeout             : 0  (0.0%)
+  Queue exhausted     : 12  (85.7%)
+  Other / resource cap: 2  (14.3%)

@@ -1,0 +1,22 @@
+============================================================
+SEARCH EFFICIENCY STATISTICS
+============================================================
+Theorems with analysis block: 20
+  Proved: 6
+  Failed/Open: 14
+
+--- Blind Search Ratio ---
+  Mean (all):    0.2493
+  Mean (proved): 0.0000
+  Mean (failed): 0.3561
+
+--- Search Width/Depth ---
+  Peak queue size (all): 2.0500
+  Max depth (all):       0.9500
+  Executed edges (all):  28.3500
+  Avg suggestions / expansion (all): 12.2457
+
+--- Calibration Proxy (step logprob) ---
+  Avg step logprob (all):     -0.4266
+  Avg step logprob (success): -0.5317
+  Avg step logprob (error):   -0.4574

@@ -1,0 +1,16 @@
+theorem_name,index_type,mislead_index,worst_fail_depth,worst_fail_tactic,worst_fail_cum_lp,success_cum_lp
+CancelDenoms.cancel_factors_lt,branch,0.45691615799804786,1,theorem_1 : (a < b) = (1 / gcd * (bd * a') < 1 / gcd * (ad * b')) := by,-0.11253648485456194,-0.5694526428526098
+Combinatorics.Line.apply_of_ne_none,branch,1.2252863828952496,1,-- The proof goal is to show that `some ((fun x i => (l.idxFun i).getD x) x i) = l.idxFun i` under the assumption `h : l.idxFun i ≠ none`.,-0.19463549210475042,-1.419921875
+NNReal.le_inv_iff_mul_le,branch,0.6601960842426007,1,The proof goal is to show that `r ≤ p⁻¹ ↔ r * p ≤ 1` for non-negative real numbers `r` and `p` with `p ≠ 0`.,-0.2729443311691284,-0.9331404154117291
+Algebra.map_leftMulMatrix_localization,global_B,0.16881267916188286,-1,,-0.2247363105416298,
+Batteries.BinomialHeap.Imp.Heap.WF.tail?,global_B,0.40396651621465085,-1,,-0.15099047422409057,
+CategoryTheory.Equivalence.invFunIdAssoc_hom_app,global_B,0.28344877297821935,-1,,-0.11010021672529333,
+CochainComplex.mk'_d_1_0,global_B,0.16710961830256274,-1,,-0.2264393714009499,
+ENNReal.le_rpow_one_div_iff,global_B,0.17645141888427318,-1,,-0.21709757081923947,
+Equiv.Perm.prod_comp',global_B,0.23757918830028535,-1,,-0.1559698014032273,
+Filter.HasBasis.to_hasBasis',global_B,0.27071797117148894,-1,,-0.12283101853202372,
+Ideal.span_singleton_eq_span_singleton,global_B,0.23119223953312285,-1,,-0.1623567501703898,
+IntermediateField.separable_of_mem_isSeparable,global_B,-0.013619267532968049,-1,,-0.4071682572364807,
+MeasureTheory.OuterMeasure.comap_ofFunction,global_B,0.2466142412272181,-1,,-0.19370887590491254,
+Polynomial.Monic.degree_mul_comm,global_B,0.14973934078100115,-1,,-0.2438096489225115,
+SetTheory.PGame.zero_lf_inv',global_B,0.1973303901009904,-1,,-0.40281817046078766,

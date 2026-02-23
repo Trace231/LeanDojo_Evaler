@@ -1,7 +1,7 @@
 # LeanDojo-v2 Dynamic Analysis Playground
 
 一个偏研究导向、偏实战的 Lean 4 自动证明分析仓库。  
-核心目标不是单纯追求 pass@1，而是把「模型在证明搜索里的行为」拆开看清楚：
+核心目标不是单纯追求 pass@1，而是分析 **模型在证明搜索里的行为** ：
 
 - 它什么时候自信但错（calibration / hallucination）
 - 它什么时候在盲目试错（efficiency / blind search）
@@ -9,6 +9,36 @@
 
 当前主线脚本：`run_dataset_eval_bfs.py`  
 主分析脚本：`search_analysis_master.py`
+
+---
+
+## Empirical Results Overview
+
+本仓库的核心贡献在于对自动定理证明搜索过程的深入分析。以下为典型实验的关键结果概览：
+
+### Search Success Profile
+
+下图展示了证明搜索过程中成功率与搜索深度的关系，观察模型在不同搜索阶段的成功概率变化：
+
+![搜索成功曲线](analysis_output%203/aggregate_success_curve.png)
+
+此曲线揭示了两个重要现象：（1）早期阶段的分支数量和成功率变化遵循明确的分布特征；（2）成功路径和失败路径在搜索树中呈现不对称的树深度分布。
+
+### Distribution of Key Metrics
+
+下图为搜索树中关键指标的分布直方图，包括节点深度、对数概率及困惑度：
+
+![主要指标分布](analysis_output%203/distribution_histograms.png)
+
+从分布特征可以观察：节点深度呈现长尾特征，暗示少数成功路径需要更深的搜索深度；对数概率的多峰分布反映了模型的不同决策前景。
+
+### Misleading Index Analysis
+
+错误指引指数（Misleading Index）用于量化模型何时给予失败分支不适当的高置信度。下图展示了误导指数的密度分布：
+
+![误导指数密度分布](analysis_output%203/mislead_indices_density.png)
+
+该指标对于诊断模型的 hallucination 风险至关重要：指数越高表示模型的评分与实际路径可行性之间的不一致性越严重。
 
 ---
 
@@ -248,6 +278,46 @@ python search_analysis_master.py \
 
 1. same BFSP + different generator  
 2. same generator + different decoding setup
+
+---
+
+## Advanced Analysis & Technical Insights
+
+### Search Efficiency Profiling
+
+下图展示了搜索过程中节点扩展的散点分布，横轴为总扩展数，纵轴为单个定理的搜索阶段：
+
+![节点扩展散点分析](analysis_output%203/expansion_scatter.png)
+
+此图用于识别搜索策略的效率特征。散点的聚集程度反映了不同定理对搜索空间复杂度的差异。特别地，离群的点表示那些需要非常深的搜索树或广泛探索的定理，这类问题往往对应模型知识薄弱的领域。
+
+### Leaf Node Complexity Analysis
+
+叶节点的困惑度（Perplexity）和累积对数概率（cumulative log-probability）分布是诊断搜索行为的重要指标：
+
+![叶节点累积对数概率密度](analysis_output%203/leaf_cumlp_density_aggregate.png)
+
+![叶节点PPL密度分布](analysis_output%203/leaf_ppl_density_aggregate.png)
+
+这两组分布揭示：
+- 高困惑度的叶节点通常对应模型置信度低的探索分支
+- 累积对数概率的双峰分布表明成功和失败分支间存在明确的统计可分性
+- 密度的尾部特征指示了搜索中的"死胡同"现象的普遍性
+
+### Priority Evolution Dynamics
+
+优先级分数在搜索过程中的演变特征：
+
+![优先级演变曲线](analysis_output%203/priority_evolution_aggregate.png)
+
+优先级演变曲线展示了最优先级路径（orange）和中位优先级路径（blue）在搜索过程中的变化趋势。该曲线对于理解：
+1. **模型的决策稳定性**：优先级曲线的平滑度反映模型评分的一致性
+2. **搜索方向性**：上升趋势表示搜索算法有效地指向高置信度区域
+3. **Hallucination 痕迹**：陡峭的下降可能指示模型先前的高置信度估计被后续探索推翻
+
+### Per-Theorem Evolution Patterns
+
+不同定理的搜索演变模式存在显著差异。`priority_evolution_per_theorem/` 目录包含了具体定理层级的优先级演变曲线，便于深入诊断特定问题的搜索困难。
 
 ---
 

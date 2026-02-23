@@ -1,0 +1,41 @@
+============================================================
+ROOT-CAUSE CLASSIFICATION
+============================================================
+
+--- Confident-Hallucination Errors ---
+(ErrorNode with cumulative_logprob > -1.0, i.e. near 0)
+  Found 292 confident-hallucination errors
+  [CategoryTheory.Equivalence.invFunIdAssoc_hom_app] depth=1 cum_lp=-0.110 tactic="app_eq : (e.invFunIdAssoc F).hom.app X = F.map (e.counit.app X) := by" error="<stdin>:1:1: unknown tactic"
+  [CancelDenoms.cancel_factors_lt] depth=1 cum_lp=-0.113 tactic="theorem_1 : (a < b) = (1 / gcd * (bd * a') < 1 / gcd * (ad * b')) := by" error="<stdin>:1:1: unknown tactic"
+  [Filter.HasBasis.to_hasBasis'] depth=1 cum_lp=-0.123 tactic="exact? hl.to_hasBasis (fun i hi ↦ h i hi) fun i' hi' ↦ h' i' hi'" error="<stdin>:1:7: expected end of input"
+  [Filter.HasBasis.to_hasBasis'] depth=1 cum_lp=-0.141 tactic="exact? hl.to_hasBasis (fun i hi ↦ (h i hi).imp fun i' hi' ↦ ⟨hi'.1, hi'.2.trans (subset_refl _)⟩) fun i' hi' ↦ h'" error="<stdin>:1:7: expected end of input"
+  [Filter.HasBasis.to_hasBasis'] depth=1 cum_lp=-0.145 tactic="exact? hl.to_hasBasis (fun i hi => h i hi) fun i' hi' => h' i' hi'" error="<stdin>:1:7: expected end of input"
+  [Filter.HasBasis.to_hasBasis'] depth=1 cum_lp=-0.148 tactic="exact? hl.to_hasBasis (fun i hi ↦ h i hi) (fun i' hi' ↦ h' i' hi')" error="<stdin>:1:7: expected end of input"
+  [Filter.HasBasis.to_hasBasis'] depth=1 cum_lp=-0.152 tactic="exact? hl.to_hasBasis (fun i hi ↦ (h i hi).imp fun i' ⟨hi', h⟩ ↦ ⟨hi', h⟩) fun i' hi' ↦ h' i' hi'" error="<stdin>:1:7: expected end of input"
+  [Equiv.Perm.prod_comp'] depth=1 cum_lp=-0.156 tactic="simp_all [Equiv.Perm.sign_symm, Equiv.Perm.sign_mul, Equiv.Perm.sign_one, Equiv.Perm.sign_swap]" error="unknown constant 'Equiv.Perm.sign_symm'
+unknown constant 'Equiv.Perm.sign_mul'
+unknown constant 'Equiv.Perm.sign_one'
+unknown constant 'Equiv.Perm.sign_swap'"
+  [Ideal.span_singleton_eq_span_singleton] depth=1 cum_lp=-0.162 tactic="simp [Ideal.span_singleton_eq_span_singleton]" error="kernel type check failed: (kernel) declaration has free variables '[anonymous]'"
+  [Equiv.Perm.prod_comp'] depth=1 cum_lp=-0.168 tactic="simp_all [Equiv.Perm.sign_symm, Equiv.Perm.sign_mul, Equiv.Perm.sign_inv]" error="unknown constant 'Equiv.Perm.sign_symm'
+unknown constant 'Equiv.Perm.sign_mul'
+unknown constant 'Equiv.Perm.sign_inv'"
+  [Equiv.Perm.prod_comp'] depth=1 cum_lp=-0.181 tactic="'simp [Equiv.Perm.sign_symm, Equiv.Perm.sign_inv, Equiv.Perm.sign_mul, Equiv.Perm.sign_swap," error="<stdin>:1:3: missing end of character literal"
+  [Equiv.Perm.prod_comp'] depth=1 cum_lp=-0.182 tactic="simp_all [Equiv.Perm.inv_def, Equiv.symm_apply_apply]" error="unknown constant 'Equiv.Perm.inv_def'"
+  [Filter.HasBasis.to_hasBasis'] depth=1 cum_lp=-0.188 tactic="exact? hl.to_hasBasis (fun i hi => h i hi) h'" error="<stdin>:1:7: expected end of input"
+  [Combinatorics.Line.apply_of_ne_none] depth=1 cum_lp=-0.195 tactic="-- The proof goal is to show that `some ((fun x i => (l.idxFun i).getD x) x i) = l.idxFun i` under the assumption `h : l.idxFun i ≠ none`." error="<stdin>:1:138: unexpected end of input"
+  [Equiv.Perm.prod_comp'] depth=1 cum_lp=-0.204 tactic="simp_all [Equiv.Perm.inv_def, Equiv.symm_apply_eq]" error="unknown constant 'Equiv.Perm.inv_def'"
+  [ENNReal.le_rpow_one_div_iff] depth=1 cum_lp=-0.217 tactic="simp_all [ENNReal.rpow_def_of_pos, hz, le_div_iff, mul_comm]" error="unknown constant 'ENNReal.rpow_def_of_pos'
+ambiguous, possible interpretations 
+  _root_.le_div_iff : 0 < ?m.147605 → (?m.147603 ≤ ?m.147604 / ?m.147605 ↔ ?m.147603 * ?m.147605 ≤ ?m.147604)
+  
+  NNReal.le_div_iff : ?m.147614 ≠ 0 → (?m.147612 ≤ ?m.147613 / ?m.147614 ↔ ?m.147612 * ?m.147614 ≤ ?m.147613)"
+  [Equiv.Perm.prod_comp'] depth=1 cum_lp=-0.225 tactic="simp [Equiv.Perm.sign_symm, Equiv.Perm.sign_mul, Equiv.Perm.sign_inv]" error="simp made no progress"
+  [ENNReal.le_rpow_one_div_iff] depth=1 cum_lp=-0.225 tactic="simp [ENNReal.rpow_one, ENNReal.le_rpow_iff, hz.ne', hz.ne]" error="unknown constant 'ENNReal.le_rpow_iff'"
+  [Algebra.map_leftMulMatrix_localization] depth=1 cum_lp=-0.225 tactic="-- We need to show that the matrix representation of the left multiplication by `a` in `S` is the same as the matrix representation of the left multiplication by `algebraMap S Sₘ a` in `Sₘ`." error="<stdin>:1:190: unexpected end of input"
+  [ENNReal.le_rpow_one_div_iff] depth=1 cum_lp=-0.225 tactic="simp_all [ENNReal.rpow_one, ENNReal.le_rpow_iff, hz.ne', hz.ne]" error="unknown constant 'ENNReal.le_rpow_iff'"
+
+--- Search-Confusion Diagnosis ---
+(Last 100 expanded nodes with avg cumulative_logprob < -10.0)
+
+  Total search-confusion theorems: 0 / 14

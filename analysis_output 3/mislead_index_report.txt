@@ -1,0 +1,32 @@
+============================================================
+MISLEAD INDEX REPORT
+============================================================
+
+--- Mislead Index (branch) — proved theorems ---
+  Formula: Delta = max_fail_cum_lp - success_cum_lp
+  Delta > 0  =>  model scored a WRONG branch higher than the proof (hallucination)
+  Delta ~ 0  =>  fail branches scored similarly to the proof
+  Delta < 0  =>  model correctly preferred the proof path
+  CancelDenoms.cancel_factors_lt: MI_branch=+0.457  (fail_max=-0.113, success=-0.569)
+  Combinatorics.Line.apply_of_ne_none: MI_branch=+1.225  (fail_max=-0.195, success=-1.420)
+  NNReal.le_inv_iff_mul_le: MI_branch=+0.660  (fail_max=-0.273, success=-0.933)
+
+--- Mislead Index (global_A) — failed theorems vs Ground Truth ---
+  Formula: Delta = max_fail_cum_lp - gt_cum_lp
+  Delta > 0  =>  model scored wrong paths higher than the GT proof
+
+--- Mislead Index (global_B) — failed theorems vs avg success curve ---
+  Formula: Delta = fail_cum_lp_at_depth_d - avg_success_cum_lp_at_depth_d
+  Delta > 0  =>  model scored wrong path higher than avg proved path at same depth
+  Algebra.map_leftMulMatrix_localization: MI_global_B=+0.169
+  Batteries.BinomialHeap.Imp.Heap.WF.tail?: MI_global_B=+0.404
+  CategoryTheory.Equivalence.invFunIdAssoc_hom_app: MI_global_B=+0.283
+  CochainComplex.mk'_d_1_0: MI_global_B=+0.167
+  ENNReal.le_rpow_one_div_iff: MI_global_B=+0.176
+  Equiv.Perm.prod_comp': MI_global_B=+0.238
+  Filter.HasBasis.to_hasBasis': MI_global_B=+0.271
+  Ideal.span_singleton_eq_span_singleton: MI_global_B=+0.231
+  IntermediateField.separable_of_mem_isSeparable: MI_global_B=-0.014
+  MeasureTheory.OuterMeasure.comap_ofFunction: MI_global_B=+0.247
+  Polynomial.Monic.degree_mul_comm: MI_global_B=+0.150
+  SetTheory.PGame.zero_lf_inv': MI_global_B=+0.197

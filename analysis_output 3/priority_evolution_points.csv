@@ -1,0 +1,834 @@
+theorem_name,node_id,parent_id,node_type,state_text,tactic,step_logprob,priority,depth,ppl,order_of_expansion,error_message,path_from_root,on_success_path,theorem_status
+Algebra.map_leftMulMatrix_localization,0,,InternalNode,"R : Type u_1
+S : Type u_2
+inst✝¹⁴ : CommRing R
+inst✝¹³ : CommRing S
+inst✝¹² : Algebra R S
+Rₘ : Type u_3
+Sₘ : Type u_4
+inst✝¹¹ : CommRing Rₘ
+inst✝¹⁰ : Algebra R Rₘ
+inst✝⁹ : CommRing Sₘ
+inst✝⁸ : Algebra S Sₘ
+M : Submonoid R
+inst✝⁷ : IsLocalization M Rₘ
+inst✝⁶ : IsLocalization (algebraMapSubmonoid S M) Sₘ
+inst✝⁵ : Algebra Rₘ Sₘ
+inst✝⁴ : Algebra R Sₘ
+inst✝³ : IsScalarTower R Rₘ Sₘ
+inst✝² : IsScalarTower R S Sₘ
+ι : Type u_5
+inst✝¹ : Fintype ι
+inst✝ : DecidableEq ι
+b : Basis ι R S
+a : S
+⊢ (algebraMap R Rₘ).mapMatrix ((leftMulMatrix b) a) =
+    (leftMulMatrix (Basis.localizationLocalization Rₘ M Sₘ b)) ((algebraMap S Sₘ) a)",,0.0,0.0,0,,1,,[],False,Failed
+Algebra.map_leftMulMatrix_localization,5,0.0,InternalNode,"case a
+R : Type u_1
+S : Type u_2
+inst✝¹⁴ : CommRing R
+inst✝¹³ : CommRing S
+inst✝¹² : Algebra R S
+Rₘ : Type u_3
+Sₘ : Type u_4
+inst✝¹¹ : CommRing Rₘ
+inst✝¹⁰ : Algebra R Rₘ
+inst✝⁹ : CommRing Sₘ
+inst✝⁸ : Algebra S Sₘ
+M : Submonoid R
+inst✝⁷ : IsLocalization M Rₘ
+inst✝⁶ : IsLocalization (algebraMapSubmonoid S M) Sₘ
+inst✝⁵ : Algebra Rₘ Sₘ
+inst✝⁴ : Algebra R Sₘ
+inst✝³ : IsScalarTower R Rₘ Sₘ
+inst✝² : IsScalarTower R S Sₘ
+ι : Type u_5
+inst✝¹ : Fintype ι
+inst✝ : DecidableEq ι
+b : Basis ι R S
+a : S
+i j : ι
+⊢ (algebraMap R Rₘ).mapMatrix ((leftMulMatrix b) a) i j =
+    (leftMulMatrix (Basis.localizationLocalization Rₘ M Sₘ b)) ((algebraMap S Sₘ) a) i j",ext i j,-2.3798828125,-2.3798828125,1,10.803636738565373,2,,[0],False,Failed
+Algebra.map_leftMulMatrix_localization,6,5.0,InternalNode,"case a
+R : Type u_1
+S : Type u_2
+inst✝¹⁴ : CommRing R
+inst✝¹³ : CommRing S
+inst✝¹² : Algebra R S
+Rₘ : Type u_3
+Sₘ : Type u_4
+inst✝¹¹ : CommRing Rₘ
+inst✝¹⁰ : Algebra R Rₘ
+inst✝⁹ : CommRing Sₘ
+inst✝⁸ : Algebra S Sₘ
+M : Submonoid R
+inst✝⁷ : IsLocalization M Rₘ
+inst✝⁶ : IsLocalization (algebraMapSubmonoid S M) Sₘ
+inst✝⁵ : Algebra Rₘ Sₘ
+inst✝⁴ : Algebra R Sₘ
+inst✝³ : IsScalarTower R Rₘ Sₘ
+inst✝² : IsScalarTower R S Sₘ
+ι : Type u_5
+inst✝¹ : Fintype ι
+inst✝ : DecidableEq ι
+b : Basis ι R S
+a : S
+i j : ι
+⊢ (algebraMap R Rₘ) ((leftMulMatrix b) a i j) =
+    (leftMulMatrix (Basis.ofIsLocalizedModule Rₘ M (IsScalarTower.toAlgHom R S Sₘ).toLinearMap b)) ((algebraMap S Sₘ) a)
+      i j","simp [Basis.localizationLocalization, IsLocalization.map_eq]",-0.3032522766213668,-2.683135089121367,2,3.8250347207619395,3,,"[0, 5]",False,Failed
+Algebra.map_leftMulMatrix_localization,8,6.0,InternalNode,"case a
+R : Type u_1
+S : Type u_2
+inst✝¹⁴ : CommRing R
+inst✝¹³ : CommRing S
+inst✝¹² : Algebra R S
+Rₘ : Type u_3
+Sₘ : Type u_4
+inst✝¹¹ : CommRing Rₘ
+inst✝¹⁰ : Algebra R Rₘ
+inst✝⁹ : CommRing Sₘ
+inst✝⁸ : Algebra S Sₘ
+M : Submonoid R
+inst✝⁷ : IsLocalization M Rₘ
+inst✝⁶ : IsLocalization (algebraMapSubmonoid S M) Sₘ
+inst✝⁵ : Algebra Rₘ Sₘ
+inst✝⁴ : Algebra R Sₘ
+inst✝³ : IsScalarTower R Rₘ Sₘ
+inst✝² : IsScalarTower R S Sₘ
+ι : Type u_5
+inst✝¹ : Fintype ι
+inst✝ : DecidableEq ι
+b : Basis ι R S
+a : S
+i j : ι
+⊢ (algebraMap R Rₘ) ((b.repr (a * b j)) i) = (⋯.repr ⟨(algebraMap S Sₘ) a * (algebraMap S Sₘ) (b j), ⋯⟩) i","simp [leftMulMatrix_eq_repr_mul, Basis.ofIsLocalizedModule, IsScalarTower.coe_toAlgHom']",-0.19126690179109573,-2.8744019909124625,3,2.6068275839864086,4,,"[0, 5, 6]",False,Failed
+Algebra.map_leftMulMatrix_localization,17,6.0,InternalNode,"case a
+R : Type u_1
+S : Type u_2
+inst✝¹⁴ : CommRing R
+inst✝¹³ : CommRing S
+inst✝¹² : Algebra R S
+Rₘ : Type u_3
+Sₘ : Type u_4
+inst✝¹¹ : CommRing Rₘ
+inst✝¹⁰ : Algebra R Rₘ
+inst✝⁹ : CommRing Sₘ
+inst✝⁸ : Algebra S Sₘ
+M : Submonoid R
+inst✝⁷ : IsLocalization M Rₘ
+inst✝⁶ : IsLocalization (algebraMapSubmonoid S M) Sₘ
+inst✝⁵ : Algebra Rₘ Sₘ
+inst✝⁴ : Algebra R Sₘ
+inst✝³ : IsScalarTower R Rₘ Sₘ
+inst✝² : IsScalarTower R S Sₘ
+ι : Type u_5
+inst✝¹ : Fintype ι
+inst✝ : DecidableEq ι
+b : Basis ι R S
+a : S
+i j : ι
+⊢ (algebraMap R Rₘ) ((b.repr (a * b j)) i) =
+    ((Basis.ofIsLocalizedModule Rₘ M (IsScalarTower.toAlgHom R S Sₘ).toLinearMap b).repr
+        ((algebraMap S Sₘ) a * (algebraMap S Sₘ) (b j)))
+      i","simp [leftMulMatrix_eq_repr_mul, Algebra.smul_def, IsScalarTower.coe_toAlgHom', IsScalarTower.coe_toAlgHom]",-0.22061159497215635,-2.903746684093523,3,2.632451552806943,5,,"[0, 5, 6]",False,Failed
+Algebra.map_leftMulMatrix_localization,18,17.0,InternalNode,"case a
+R : Type u_1
+S : Type u_2
+inst✝¹⁴ : CommRing R
+inst✝¹³ : CommRing S
+inst✝¹² : Algebra R S
+Rₘ : Type u_3
+Sₘ : Type u_4
+inst✝¹¹ : CommRing Rₘ
+inst✝¹⁰ : Algebra R Rₘ
+inst✝⁹ : CommRing Sₘ
+inst✝⁸ : Algebra S Sₘ
+M : Submonoid R
+inst✝⁷ : IsLocalization M Rₘ
+inst✝⁶ : IsLocalization (algebraMapSubmonoid S M) Sₘ
+inst✝⁵ : Algebra Rₘ Sₘ
+inst✝⁴ : Algebra R Sₘ
+inst✝³ : IsScalarTower R Rₘ Sₘ
+inst✝² : IsScalarTower R S Sₘ
+ι : Type u_5
+inst✝¹ : Fintype ι
+inst✝ : DecidableEq ι
+b : Basis ι R S
+a : S
+i j : ι
+⊢ (algebraMap R Rₘ) ((b.repr (a * b j)) i) = (⋯.repr ⟨(algebraMap S Sₘ) a * (algebraMap S Sₘ) (b j), ⋯⟩) i","simp [Basis.ofIsLocalizedModule, IsScalarTower.coe_toAlgHom', Algebra.id.smul_eq_mul, mul_assoc]",-0.20733944145408836,-2.8744019909124625,3,2.6068275839864086,4,,"[0, 5, 6, 17]",False,Failed
+Algebra.map_leftMulMatrix_localization,20,17.0,InternalNode,"case a
+R : Type u_1
+S : Type u_2
+inst✝¹⁴ : CommRing R
+inst✝¹³ : CommRing S
+inst✝¹² : Algebra R S
+Rₘ : Type u_3
+Sₘ : Type u_4
+inst✝¹¹ : CommRing Rₘ
+inst✝¹⁰ : Algebra R Rₘ
+inst✝⁹ : CommRing Sₘ
+inst✝⁸ : Algebra S Sₘ
+M : Submonoid R
+inst✝⁷ : IsLocalization M Rₘ
+inst✝⁶ : IsLocalization (algebraMapSubmonoid S M) Sₘ
+inst✝⁵ : Algebra Rₘ Sₘ
+inst✝⁴ : Algebra R Sₘ
+inst✝³ : IsScalarTower R Rₘ Sₘ
+inst✝² : IsScalarTower R S Sₘ
+ι : Type u_5
+inst✝¹ : Fintype ι
+inst✝ : DecidableEq ι
+b : Basis ι R S
+a : S
+i j : ι
+⊢ (algebraMap R Rₘ) ((b.repr (a * b j)) i) = (⋯.repr ⟨(algebraMap S Sₘ) a * (algebraMap S Sₘ) (b j), ⋯⟩) i","simp [Basis.ofIsLocalizedModule, IsScalarTower.coe_toAlgHom', Algebra.smul_def]",-0.21754423914284543,-2.8744019909124625,3,2.6068275839864086,4,,"[0, 5, 6, 17]",False,Failed
+Algebra.map_leftMulMatrix_localization,30,6.0,InternalNode,"case a
+R : Type u_1
+S : Type u_2
+inst✝¹⁴ : CommRing R
+inst✝¹³ : CommRing S
+inst✝¹² : Algebra R S
+Rₘ : Type u_3
+Sₘ : Type u_4
+inst✝¹¹ : CommRing Rₘ
+inst✝¹⁰ : Algebra R Rₘ
+inst✝⁹ : CommRing Sₘ
+inst✝⁸ : Algebra S Sₘ
+M : Submonoid R
+inst✝⁷ : IsLocalization M Rₘ
+inst✝⁶ : IsLocalization (algebraMapSubmonoid S M) Sₘ
+inst✝⁵ : Algebra Rₘ Sₘ
+inst✝⁴ : Algebra R Sₘ
+inst✝³ : IsScalarTower R Rₘ Sₘ
+inst✝² : IsScalarTower R S Sₘ
+ι : Type u_5
+inst✝¹ : Fintype ι
+inst✝ : DecidableEq ι
+b : Basis ι R S
+a : S
+i j : ι
+⊢ (algebraMap R Rₘ) ((b.repr (a * b j)) i) =
+    ((Basis.ofIsLocalizedModule Rₘ M (IsScalarTower.toAlgHom R S Sₘ).toLinearMap b).repr
+        ((algebraMap S Sₘ) a * (algebraMap S Sₘ) (b j)))
+      i","simp [leftMulMatrix_eq_repr_mul, Algebra.smul_def]",-0.22973620891571045,-2.903746684093523,3,2.632451552806943,5,,"[0, 5, 6]",False,Failed
+Batteries.BinomialHeap.Imp.Heap.WF.tail?,35,,InternalNode,"α : Type u_1
+s : Heap α
+le : α → α → Bool
+n : Nat
+tl : Heap α
+hwf : WF le n s
+⊢ Batteries.BinomialHeap.Imp.Heap.tail? le s = some tl → WF le 0 tl",,0.0,0.0,0,,1,,[],False,Failed
+Batteries.BinomialHeap.Imp.Heap.WF.tail?,36,35.0,InternalNode,"α : Type u_1
+s : Heap α
+le : α → α → Bool
+n : Nat
+tl : Heap α
+hwf : WF le n s
+⊢ ∀ (x : α × Heap α), Heap.deleteMin le s = some x → x.snd = tl → WF le 0 tl","simp_all [Batteries.BinomialHeap.Imp.Heap.tail?, WF]",-0.15099047422409057,-0.15099047422409057,1,1.1629855796890372,2,,[35],False,Failed
+Batteries.BinomialHeap.Imp.Heap.WF.tail?,50,35.0,InternalNode,"α : Type u_1
+s : Heap α
+le : α → α → Bool
+n : Nat
+tl : Heap α
+hwf : WF le n s
+⊢ ∀ (x : α × Heap α), Heap.deleteMin le s = some x → x.snd = tl → WF le 0 tl","simp [Batteries.BinomialHeap.Imp.Heap.tail?, Batteries.BinomialHeap.Imp.Heap.WF, Nat.zero_eq] at *",-0.23015848043802623,-0.15099047422409057,1,1.1629855796890372,2,,[35],False,Failed
+Batteries.BinomialHeap.Imp.Heap.WF.tail?,51,35.0,InternalNode,"α : Type u_1
+s : Heap α
+le : α → α → Bool
+n : Nat
+tl : Heap α
+hwf : WF le n s
+⊢ ∀ (x : α × Heap α), Heap.deleteMin le s = some x → x.snd = tl → WF le 0 tl","simp [Batteries.BinomialHeap.Imp.Heap.tail?, WF]",-0.23693274789386326,-0.15099047422409057,1,1.1629855796890372,2,,[35],False,Failed
+Batteries.BinomialHeap.Imp.Heap.WF.tail?,52,35.0,InternalNode,"α : Type u_1
+s : Heap α
+le : α → α → Bool
+n : Nat
+tl : Heap α
+hwf : WF le n s
+⊢ ∀ (x : α × Heap α), Heap.deleteMin le s = some x → x.snd = tl → WF le 0 tl","simp_all [WF, Batteries.BinomialHeap.Imp.Heap.tail?]",-0.2513381361961365,-0.15099047422409057,1,1.1629855796890372,2,,[35],False,Failed
+CancelDenoms.cancel_factors_lt,62,,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : ad * a = a'
+hb : bd * b = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ (a < b) = (1 / gcd * (bd * a') < 1 / gcd * (ad * b'))",,0.0,0.0,0,,1,,[],True,Proved
+CancelDenoms.cancel_factors_lt,64,62.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : ad * a = a'
+hb : bd * b = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp [mul_assoc, mul_comm, mul_left_comm, ha, hb, had, hbd, hgcd]",-0.1845553994178772,-0.1845553994178772,1,1.2026836074110723,2,,[62],False,Proved
+CancelDenoms.cancel_factors_lt,66,64.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : a * ad = a'
+hb : b * bd = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp_all [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm]",-0.15471468589924,-0.3392700853171172,2,1.184872344541093,4,,"[62, 64]",False,Proved
+CancelDenoms.cancel_factors_lt,92,64.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : a * ad = a'
+hb : b * bd = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp_all [mul_assoc, mul_comm, mul_left_comm, div_eq_mul_inv]",-0.21114436785380045,-0.3392700853171172,2,1.184872344541093,4,,"[62, 64]",False,Proved
+CancelDenoms.cancel_factors_lt,93,64.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : a * ad = a'
+hb : b * bd = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp_all [mul_assoc, mul_comm, mul_left_comm]",-0.2274187866010164,-0.3392700853171172,2,1.184872344541093,4,,"[62, 64]",False,Proved
+CancelDenoms.cancel_factors_lt,96,64.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : a * ad = a'
+hb : b * bd = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp_all [mul_comm, mul_assoc, mul_left_comm]",-0.24119723470587479,-0.3392700853171172,2,1.184872344541093,4,,"[62, 64]",False,Proved
+CancelDenoms.cancel_factors_lt,101,64.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : a * ad = a'
+hb : b * bd = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp_all [mul_comm, mul_assoc, mul_left_comm, mul_inv_rev, mul_assoc, mul_left_comm, mul_comm]",-0.2951843310625125,-0.3392700853171172,2,1.184872344541093,4,,"[62, 64]",False,Proved
+CancelDenoms.cancel_factors_lt,102,64.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : a * ad = a'
+hb : b * bd = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp_all [mul_assoc, mul_comm, mul_left_comm, mul_inv_rev]",-0.3035507106781006,-0.3392700853171172,2,1.184872344541093,4,,"[62, 64]",False,Proved
+CancelDenoms.cancel_factors_lt,109,62.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : ad * a = a'
+hb : bd * b = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp [ha, hb, mul_assoc, mul_comm, mul_left_comm]",-0.2207039106975902,-0.1845553994178772,1,1.2026836074110723,2,,[62],False,Proved
+CancelDenoms.cancel_factors_lt,110,62.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : ad * a = a'
+hb : bd * b = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp [ha, hb, mul_comm, mul_assoc, mul_left_comm]",-0.22733487324281174,-0.1845553994178772,1,1.2026836074110723,2,,[62],False,Proved
+CancelDenoms.cancel_factors_lt,111,62.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : ad * a = a'
+hb : bd * b = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * a' < ad * b'","simp [ha, hb, had, hbd, hgcd]",-0.23460009694099426,-0.23460009694099426,1,1.26440302897709,3,,[62],True,Proved
+CancelDenoms.cancel_factors_lt,113,111.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : ad * a = a'
+hb : bd * b = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a * gcd < b * gcd ↔ bd * (ad * a) < ad * (bd * b)","rw [← mul_lt_mul_right hgcd, ← ha, ← hb]",-0.20654571598226373,-0.441145812923258,2,1.2467908205318599,5,,"[62, 111]",True,Proved
+CancelDenoms.cancel_factors_lt,136,62.0,InternalNode,"α : Type u_1
+inst✝ : LinearOrderedField α
+a b ad bd a' b' gcd : α
+ha : ad * a = a'
+hb : bd * b = b'
+had : 0 < ad
+hbd : 0 < bd
+hgcd : 0 < gcd
+⊢ a < b ↔ bd * (a' * gcd⁻¹) < ad * (b' * gcd⁻¹)","simp [ha, hb, mul_comm, mul_assoc, mul_left_comm, hgcd]",-0.2927402353286743,-0.1845553994178772,1,1.2026836074110723,2,,[62],False,Proved
+CategoryTheory.Equivalence.invFunIdAssoc_hom_app,147,,InternalNode,"C : Type u₁
+inst✝² : Category.{v₁, u₁} C
+D : Type u₂
+inst✝¹ : Category.{v₂, u₂} D
+E : Type u₃
+inst✝ : Category.{v₃, u₃} E
+e : C ≌ D
+F : D ⥤ E
+X : D
+⊢ (e.invFunIdAssoc F).hom.app X = F.map (e.counit.app X)",,0.0,0.0,0,,1,,[],False,Open
+CategoryTheory.Equivalence.invFunIdAssoc_hom_app,149,147.0,InternalNode,"C : Type u₁
+inst✝² : Category.{v₁, u₁} C
+D : Type u₂
+inst✝¹ : Category.{v₂, u₂} D
+E : Type u₃
+inst✝ : Category.{v₃, u₃} E
+e : C ≌ D
+F : D ⥤ E
+X : D
+⊢ (e.invFunIdAssoc F).hom.app X = F.map (e.counit.app X)","simp [NatTrans.comp_app, Functor.comp_map, Iso.inv_hom_id_app]",-0.25309471998895916,0.0,0,,1,,[147],False,Open
+CategoryTheory.Equivalence.invFunIdAssoc_hom_app,153,147.0,InternalNode,"C : Type u₁
+inst✝² : Category.{v₁, u₁} C
+D : Type u₂
+inst✝¹ : Category.{v₂, u₂} D
+E : Type u₃
+inst✝ : Category.{v₃, u₃} E
+e : C ≌ D
+F : D ⥤ E
+X : D
+⊢ (e.invFunIdAssoc F).hom.app X = F.map (e.counit.app X)","simp [NatTrans.naturality, Functor.map_id, Category.id_comp]",-0.36693682877913764,0.0,0,,1,,[147],False,Open
+CategoryTheory.Equivalence.invFunIdAssoc_hom_app,155,147.0,InternalNode,"C : Type u₁
+inst✝² : Category.{v₁, u₁} C
+D : Type u₂
+inst✝¹ : Category.{v₂, u₂} D
+E : Type u₃
+inst✝ : Category.{v₃, u₃} E
+e : C ≌ D
+F : D ⥤ E
+X : D
+⊢ (e.invFunIdAssoc F).hom.app X = F.map (e.counit.app X)",simp [← Functor.map_comp],-0.3749290162866766,0.0,0,,1,,[147],False,Open
+CategoryTheory.Equivalence.invFunIdAssoc_hom_app,162,147.0,InternalNode,"C : Type u₁
+inst✝² : Category.{v₁, u₁} C
+D : Type u₂
+inst✝¹ : Category.{v₂, u₂} D
+E : Type u₃
+inst✝ : Category.{v₃, u₃} E
+e : C ≌ D
+F : D ⥤ E
+X : D
+⊢ (e.invFunIdAssoc F).hom.app X = F.map (e.counit.app X)",simp [NatTrans.comp_app],-0.5369895696640015,0.0,0,,1,,[147],False,Open
+CategoryTheory.Equivalence.invFunIdAssoc_hom_app,167,147.0,InternalNode,"C : Type u₁
+inst✝² : Category.{v₁, u₁} C
+D : Type u₂
+inst✝¹ : Category.{v₂, u₂} D
+E : Type u₃
+inst✝ : Category.{v₃, u₃} E
+e : C ≌ D
+F : D ⥤ E
+X : D
+⊢ (e.invFunIdAssoc F).hom.app X = F.map (e.counit.app X)",simp,-0.764892578125,0.0,0,,1,,[147],False,Open
+CochainComplex.mk'_d_1_0,170,,InternalNode,"ι : Type u_1
+V : Type u
+inst✝¹ : Category.{v, u} V
+inst✝ : HasZeroMorphisms V
+X₀ X₁ X₂ : V
+d₀ : X₀ ⟶ X₁
+d₁ : X₁ ⟶ X₂
+s : d₀ ≫ d₁ = 0
+succ : (S : ShortComplex V) → (X₄ : V) ×' (d₂ : S.X₃ ⟶ X₄) ×' S.g ≫ d₂ = 0
+succ' : {X₀ X₁ : V} → (f : X₀ ⟶ X₁) → (X₂ : V) ×' (d : X₁ ⟶ X₂) ×' f ≫ d = 0
+⊢ (mk' X₀ X₁ d₀ fun {X₀ X₁} => succ').d 0 1 = d₀",,0.0,0.0,0,,1,,[],False,Failed
+Combinatorics.Line.apply_of_ne_none,186,,InternalNode,"α : Type u_1
+ι : Type u_2
+l : Line α ι
+x : α
+i : ι
+h : l.idxFun i ≠ none
+⊢ some ((fun x i => (l.idxFun i).getD x) x i) = l.idxFun i",,0.0,0.0,0,,1,,[],True,Proved
+Convex.thickening,203,,InternalNode,"ι : Type u_1
+E : Type u_2
+P : Type u_3
+inst✝³ : SeminormedAddCommGroup E
+inst✝² : NormedSpace ℝ E
+inst✝¹ : PseudoMetricSpace P
+inst✝ : NormedAddTorsor E P
+s t : Set E
+hs : Convex ℝ s
+δ : ℝ
+⊢ Convex ℝ (Metric.thickening δ s)",,0.0,0.0,0,,1,,[],False,Open
+ENNReal.le_rpow_one_div_iff,204,,InternalNode,"x y : ℝ≥0∞
+z : ℝ
+hz : 0 < z
+⊢ x ≤ y ^ (1 / z) ↔ x ^ z ≤ y",,0.0,0.0,0,,1,,[],False,Open
+ENNReal.le_rpow_one_div_iff,219,204.0,InternalNode,"x y : ℝ≥0∞
+z : ℝ
+hz : 0 < z
+⊢ x ≤ y ^ z⁻¹ ↔ x ^ z ≤ y",ring_nf,-0.7484946250915527,-0.7484946250915527,1,2.1138155354268973,2,,[204],False,Open
+ENNReal.le_rpow_one_div_iff,225,219.0,InternalNode,"x y : ℝ≥0∞
+z : ℝ
+hz : 0 < z
+⊢ x ≤ y ^ z⁻¹ ↔ x ^ z ≤ y",ring_nf,-0.6220296621322632,-0.7484946250915527,1,2.1138155354268973,2,,"[204, 219]",False,Open
+ENNReal.le_rpow_one_div_iff,226,219.0,InternalNode,"x y : ℝ≥0∞
+z : ℝ
+hz : 0 < z
+⊢ x ≤ y ^ z⁻¹ ↔ x ^ z ≤ y",ring_nf at *,-0.893530297279358,-0.7484946250915527,1,2.1138155354268973,2,,"[204, 219]",False,Open
+Equiv.Perm.prod_comp',234,,InternalNode,"ι : Type u_1
+κ : Type u_2
+α : Type u_3
+β : Type u_4
+γ : Type u_5
+s✝ s₁ s₂ : Finset α
+a : α
+f✝ g : α → β
+inst✝ : CommMonoid β
+σ : Equiv.Perm α
+s : Finset α
+f : α → α → β
+hs : {a | σ a ≠ a} ⊆ ↑s
+⊢ ∏ x ∈ s, f (σ x) x = ∏ x ∈ s, f x ((Equiv.symm σ) x)",,0.0,0.0,0,,1,,[],False,Failed
+Equiv.Perm.prod_comp',254,234.0,InternalNode,"case h
+ι : Type u_1
+κ : Type u_2
+α : Type u_3
+β : Type u_4
+γ : Type u_5
+s✝ s₁ s₂ : Finset α
+a : α
+f✝ g : α → β
+inst✝ : CommMonoid β
+σ : Equiv.Perm α
+s : Finset α
+f : α → α → β
+hs : {a | σ a ≠ a} ⊆ ↑s
+⊢ ∏ x ∈ s, f x ((Equiv.symm σ) x) = ∏ x ∈ s, f (σ x) x",apply Eq.symm,-1.2562620162963867,-1.2562620162963867,1,3.5122681181525994,2,,[234],False,Failed
+Equiv.Perm.prod_comp',277,234.0,InternalNode,"case e_f
+ι : Type u_1
+κ : Type u_2
+α : Type u_3
+β : Type u_4
+γ : Type u_5
+s✝ s₁ s₂ : Finset α
+a : α
+f✝ g : α → β
+inst✝ : CommMonoid β
+σ : Equiv.Perm α
+s : Finset α
+f : α → α → β
+hs : {a | σ a ≠ a} ⊆ ↑s
+⊢ (fun x => f (σ x) x) = fun x => f x ((Equiv.symm σ) x)",congr,-3.578125298023224,-3.578125298023224,1,35.80635164866242,3,,[234],False,Failed
+Equiv.Perm.prod_comp',289,277.0,InternalNode,"case e_f.h
+ι : Type u_1
+κ : Type u_2
+α : Type u_3
+β : Type u_4
+γ : Type u_5
+s✝ s₁ s₂ : Finset α
+a✝ : α
+f✝ g : α → β
+inst✝ : CommMonoid β
+σ : Equiv.Perm α
+s : Finset α
+f : α → α → β
+hs : {a | σ a ≠ a} ⊆ ↑s
+a : α
+⊢ f (σ a) a = f a ((Equiv.symm σ) a)",funext a,-0.7591298421223959,-4.337255140145619,2,8.74627215423418,4,,"[234, 277]",False,Failed
+Filter.HasBasis.to_hasBasis',305,,InternalNode,"α : Type u_1
+β : Type u_2
+γ : Type u_3
+ι : Sort u_4
+ι' : Sort u_5
+l l' : Filter α
+p : ι → Prop
+s : ι → Set α
+t : Set α
+i : ι
+p' : ι' → Prop
+s' : ι' → Set α
+i' : ι'
+hl : l.HasBasis p s
+h : ∀ (i : ι), p i → ∃ i', p' i' ∧ s' i' ⊆ s i
+h' : ∀ (i' : ι'), p' i' → s' i' ∈ l
+⊢ l.HasBasis p' s'",,0.0,0.0,0,,1,,[],False,Failed
+Finmap.erase_toFinmap,317,,InternalNode,"α : Type u
+β : α → Type v
+inst✝ : DecidableEq α
+a : α
+s : AList β
+⊢ erase a ⟦s⟧ = ⟦AList.erase a s⟧",,0.0,0.0,0,,1,,[],True,Proved
+FreeAlgebra.toTensor_ι,319,,InternalNode,"R : Type u_1
+inst✝² : CommSemiring R
+M : Type u_2
+inst✝¹ : AddCommMonoid M
+inst✝ : Module R M
+m : M
+⊢ toTensor (ι R m) = (TensorAlgebra.ι R) m",,0.0,0.0,0,,1,,[],True,Proved
+Ideal.span_singleton_eq_span_singleton,321,,InternalNode,"α✝ : Type u
+β : Type v
+a b : α✝
+inst✝² : CommSemiring α✝
+I : Ideal α✝
+α : Type u
+inst✝¹ : CommRing α
+inst✝ : IsDomain α
+x y : α
+⊢ span {x} = span {y} ↔ Associated x y",,0.0,0.0,0,,1,,[],False,Open
+Ideal.span_singleton_eq_span_singleton,326,321.0,InternalNode,"α✝ : Type u
+β : Type v
+a b : α✝
+inst✝² : CommSemiring α✝
+I : Ideal α✝
+α : Type u
+inst✝¹ : CommRing α
+inst✝ : IsDomain α
+x y : α
+⊢ span {x} = span {y} ↔ Associated x y",ring_nf at *,-0.7194749116897583,0.0,0,,1,,[321],False,Open
+IntermediateField.separable_of_mem_isSeparable,327,,InternalNode,"F : Type u
+E : Type v
+inst✝⁵ : Field F
+inst✝⁴ : Field E
+inst✝³ : Algebra F E
+K : Type w
+inst✝² : Field K
+inst✝¹ : Algebra F K
+L : IntermediateField F E
+inst✝ : IsSeparable F ↥L
+x : E
+h : x ∈ L
+⊢ (minpoly F x).Separable",,0.0,0.0,0,,1,,[],False,Failed
+IsGroupHom.inv_ker_one',331,,InternalNode,"G : Type u_1
+H : Type u_2
+A : Type u_3
+a✝ a₁ a₂ b✝ c : G
+inst✝¹ : Group G
+inst✝ : Group H
+f : G → H
+hf : IsGroupHom f
+a b : G
+h : f a = f b
+⊢ f (a⁻¹ * b) = 1",,0.0,0.0,0,,1,,[],True,Proved
+MeasureTheory.OuterMeasure.comap_ofFunction,333,,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : Monotone m ∨ Surjective f
+⊢ (comap f) (OuterMeasure.ofFunction m m_empty) = OuterMeasure.ofFunction (fun s => m (f '' s)) ⋯",,0.0,0.0,0,,1,,[],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,334,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [OuterMeasure.ofFunction, comap_apply, Monotone, Surjective]",-0.19370887590491254,-0.19370887590491254,1,1.213742881718812,2,,[333],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,359,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [OuterMeasure.ofFunction, Monotone, Surjective, comap_apply]",-0.20199530021004056,-0.19370887590491254,1,1.213742881718812,2,,[333],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,360,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f) (OuterMeasure.ofFunction m m_empty) = OuterMeasure.ofFunction (fun s => m (f '' s)) ⋯","simp_all [OuterMeasure.comap_apply, Monotone, Surjective]",-0.21122267842292786,-0.21122267842292786,1,1.2351873740163308,3,,[333],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,361,360.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [OuterMeasure.ofFunction, comap_apply]",-0.18257427960634232,-0.19370887590491254,1,1.213742881718812,2,,"[333, 360]",False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,362,360.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [OuterMeasure.ofFunction, comap_apply, le_refl]",-0.1831623259044829,-0.19370887590491254,1,1.213742881718812,2,,"[333, 360]",False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,366,360.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp [OuterMeasure.ofFunction, comap_apply, h]",-0.34795207530260086,-0.19370887590491254,1,1.213742881718812,2,,"[333, 360]",False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,379,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : Monotone m ∨ Surjective f
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [OuterMeasure.ofFunction, comap_apply]",-0.2390783131122589,-0.2390783131122589,1,1.2700779964499935,4,,[333],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,380,379.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [comap_apply, Monotone, Surjective]",-0.23948627359726848,-0.19370887590491254,1,1.213742881718812,2,,"[333, 379]",False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,381,379.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [comap_apply, Monotone, Surjective, le_refl, le_of_eq, eq_self_iff_true, and_self_iff]",-0.23978854077202932,-0.19370887590491254,1,1.213742881718812,2,,"[333, 379]",False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,384,379.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [comap_apply, Monotone, Surjective, Function.comp]",-0.3429646208172753,-0.19370887590491254,1,1.213742881718812,2,,"[333, 379]",False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,403,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : Monotone m ∨ Surjective f
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp [OuterMeasure.ofFunction, comap_apply, h]",-0.2782476097345352,-0.2390783131122589,1,1.2700779964499935,4,,[333],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,404,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ Surjective f
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [OuterMeasure.ofFunction, comap_apply, Monotone]",-0.2912633419036865,-0.2912633419036865,1,1.3381169198126193,5,,[333],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,412,404.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ Surjective f
+⊢ (comap f) { measureOf := fun s => ⨅ x, ∑' (i : ℕ), m (↑x i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ x, ∑' (i : ℕ), m (f '' ↑x i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ }","simp [comap_apply, iInf_subtype', iInf_comm]",-0.4691221588536313,-0.7603855007573178,2,1.462566472508207,6,,"[333, 404]",False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,415,412.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, (∀ x ∈ a, x ∈ b) → m a ≤ m b) ∨ Surjective f
+⊢ (comap f) { measureOf := fun s => ⨅ x, ∑' (i : ℕ), m (↑x i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ x, ∑' (i : ℕ), m (f '' ↑x i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ }","simp_all [comap_apply, le_refl, le_of_eq, Set.subset_def]",-0.33678296318760625,-1.0971684639449242,3,1.44155561878266,7,,"[333, 404, 412]",False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,492,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : (∀ ⦃a b : Set α⦄, a ⊆ b → m a ≤ m b) ∨ ∀ (b : α), ∃ a, f a = b
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp_all [OuterMeasure.ofFunction, Monotone, Surjective]",-0.30546753274069893,-0.19370887590491254,1,1.213742881718812,2,,[333],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,494,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : Monotone m ∨ Surjective f
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp [h, OuterMeasure.ofFunction, comap_apply, Monotone, Surjective]",-0.3621900029804396,-0.2390783131122589,1,1.2700779964499935,4,,[333],False,Failed
+MeasureTheory.OuterMeasure.comap_ofFunction,496,333.0,InternalNode,"α : Type u_1
+m : Set α → ℝ≥0∞
+m_empty : m ∅ = 0
+β : Type u_2
+f : β → α
+h : Monotone m ∨ Surjective f
+⊢ (comap f)
+      { measureOf := fun s => ⨅ f, ⨅ (_ : s ⊆ ⋃ i, f i), ∑' (i : ℕ), m (f i), empty := ⋯, mono := ⋯, iUnion_nat := ⋯ } =
+    { measureOf := fun s => ⨅ f_1, ⨅ (_ : s ⊆ ⋃ i, f_1 i), ∑' (i : ℕ), m (f '' f_1 i), empty := ⋯, mono := ⋯,
+      iUnion_nat := ⋯ }","simp [OuterMeasure.ofFunction, comap_apply, Monotone]",-0.40255623393588597,-0.2390783131122589,1,1.2700779964499935,4,,[333],False,Failed
+MeasureTheory.integrable_of_intervalIntegral_norm_bounded,500,,InternalNode,"ι : Type u_1
+E : Type u_2
+μ : Measure ℝ
+l : Filter ι
+inst✝² : l.NeBot
+inst✝¹ : l.IsCountablyGenerated
+inst✝ : NormedAddCommGroup E
+a b : ι → ℝ
+f : ℝ → E
+I : ℝ
+hfi : ∀ (i : ι), IntegrableOn f (Ioc (a i) (b i)) μ
+ha : Tendsto a l atBot
+hb : Tendsto b l atTop
+h : ∀ᶠ (i : ι) in l, ∫ (x : ℝ) in a i..b i, ‖f x‖ ∂μ ≤ I
+⊢ Integrable f μ",,0.0,0.0,0,,1,,[],False,Open
+NNReal.le_inv_iff_mul_le,501,,InternalNode,"r p : ℝ≥0
+h : p ≠ 0
+⊢ r ≤ p⁻¹ ↔ r * p ≤ 1",,0.0,0.0,0,,1,,[],True,Proved
+NNReal.le_inv_iff_mul_le,502,501.0,InternalNode,"r p : ℝ≥0
+h : p ≠ 0
+⊢ p * r ≤ p * p⁻¹ ↔ r * p ≤ 1",rw [← mul_le_mul_left (by positivity : (0 : ℝ≥0) < p)],-0.2469114248569195,-0.2469114248569195,1,1.280065725751897,2,,[501],True,Proved
+NNReal.le_inv_iff_mul_le,533,501.0,InternalNode,"r p : ℝ≥0
+h : p ≠ 0
+⊢ r ≤ p⁻¹ ↔ r * p ≤ 1",ring_nf,-0.6623144547144572,0.0,0,,1,,[501],False,Proved
+Polynomial.Monic.degree_mul_comm,539,,InternalNode,"R : Type u
+S : Type v
+a b : R
+m n : ℕ
+ι : Type y
+inst✝ : Semiring R
+p q✝ r : R[X]
+hp : p.Monic
+q : R[X]
+⊢ (p * q).degree = (q * p).degree",,0.0,0.0,0,,1,,[],False,Open
+Polynomial.Monic.degree_mul_comm,543,539.0,InternalNode,"R : Type u
+S : Type v
+a b : R
+m n : ℕ
+ι : Type y
+inst✝ : Semiring R
+p q✝ r : R[X]
+hp : p.Monic
+q : R[X]
+⊢ (p * q).degree = (q * p).degree",ring_nf,-0.7994798421859741,0.0,0,,1,,[539],False,Open
+Polynomial.Monic.degree_mul_comm,546,539.0,InternalNode,"R : Type u
+S : Type v
+a b : R
+m n : ℕ
+ι : Type y
+inst✝ : Semiring R
+p q✝ r : R[X]
+hp : p.Monic
+q : R[X]
+⊢ (p * q).degree = (q * p).degree",ring,-1.921875,0.0,0,,1,,[539],False,Open
+SetTheory.PGame.zero_lf_inv',547,,InternalNode,"⊢ ∀ (x : PGame), 0 ⧏ x.inv'",,0.0,0.0,0,,1,,[],False,Failed
+SetTheory.PGame.zero_lf_inv',548,547.0,InternalNode,"⊢ ∀ (x : PGame), ∃ i, 0 ≤ x.inv'.moveLeft i",simp [lf_iff_exists_le],-0.40281817046078766,-0.40281817046078766,1,1.4960348436048874,2,,[547],False,Failed
