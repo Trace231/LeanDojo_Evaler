@@ -47,10 +47,8 @@ def _bootstrap_local_lean_dojo_v2() -> None:
 
 def _load_core_symbols() -> None:
     global LeanGitRepo, Pos, Theorem
-    try:
-        import lean_dojo_v2.lean_agent  # noqa: F401
-    except Exception:
-        _bootstrap_local_lean_dojo_v2()
+    # Always prefer local source tree first when available.
+    _bootstrap_local_lean_dojo_v2()
     from lean_dojo_v2.lean_dojo import LeanGitRepo as _LeanGitRepo, Pos as _Pos, Theorem as _Theorem
 
     LeanGitRepo = _LeanGitRepo
@@ -377,16 +375,28 @@ def _load_best_first_search_prover():
         import lean_dojo_v2
 
         pkg_root = Path(lean_dojo_v2.__file__).resolve().parent
+        lean_agent_dir = pkg_root / "lean_agent"
+        generator_dir = lean_agent_dir / "generator"
         prover_dir = pkg_root / "lean_agent" / "prover"
         proof_search_path = prover_dir / "proof_search.py"
         search_tree_path = prover_dir / "search_tree.py"
 
+        # Build synthetic parent packages to avoid importing broken __init__.py files.
+        lean_agent_pkg_name = "lean_dojo_v2.lean_agent"
+        lean_agent_pkg = types.ModuleType(lean_agent_pkg_name)
+        lean_agent_pkg.__path__ = [str(lean_agent_dir)]  # type: ignore[attr-defined]
+        sys.modules[lean_agent_pkg_name] = lean_agent_pkg
+
+        generator_pkg_name = "lean_dojo_v2.lean_agent.generator"
+        generator_pkg = types.ModuleType(generator_pkg_name)
+        generator_pkg.__path__ = [str(generator_dir)]  # type: ignore[attr-defined]
+        sys.modules[generator_pkg_name] = generator_pkg
+
         # Build a synthetic package to bypass broken prover/__init__.py.
         prover_pkg_name = "lean_dojo_v2.lean_agent.prover"
-        if prover_pkg_name not in sys.modules:
-            prover_pkg = types.ModuleType(prover_pkg_name)
-            prover_pkg.__path__ = [str(prover_dir)]  # type: ignore[attr-defined]
-            sys.modules[prover_pkg_name] = prover_pkg
+        prover_pkg = types.ModuleType(prover_pkg_name)
+        prover_pkg.__path__ = [str(prover_dir)]  # type: ignore[attr-defined]
+        sys.modules[prover_pkg_name] = prover_pkg
 
         # Preload search_tree so proof_search can import it without touching __init__.py.
         search_tree_mod_name = "lean_dojo_v2.lean_agent.prover.search_tree"
@@ -694,7 +704,13 @@ def main() -> None:
 
     candidate_paths = []
     if args.dataset_path:
-        candidate_paths.append(Path(args.dataset_path))
+        explicit = Path(args.dataset_path)
+        if not explicit.exists():
+            raise FileNotFoundError(
+                f"--dataset_path not found: {explicit}\n"
+                "Please pass a valid absolute path or run from the expected project root."
+            )
+        candidate_paths.append(explicit)
     candidate_paths.extend(
         [
             Path("data/leandojo_benchmark/random/test_sampled_50.json"),
