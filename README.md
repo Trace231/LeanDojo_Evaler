@@ -317,7 +317,27 @@ python search_analysis_master.py \
 
 ### Per-Theorem Evolution Patterns
 
-不同定理的搜索演变模式存在显著差异。`priority_evolution_per_theorem/` 目录包含了具体定理层级的优先级演变曲线，便于深入诊断特定问题的搜索困难。
+不同定理的搜索演变模式存在显著差异。以下为若干代表性定理的优先级演变曲线，展示了模型在具体问题上的搜索行为差异：
+
+#### 示例一：Equiv_Perm_prod_comp'
+
+![Equiv_Perm_prod_comp'](analysis_output%203/evolution_plots/Equiv_Perm_prod_comp'.png)
+
+该定理展现了相对平稳的优先级演变，表明模型对该问题领域的理解相对一致，搜索过程没有出现明显的置信度崩溃。
+
+#### 示例二：Polynomial_Monic_degree_mul_comm'
+
+![Polynomial_Monic_degree_mul_comm'](analysis_output%203/evolution_plots/Polynomial_Monic_degree_mul_comm.png)
+
+该定理的演变曲线展现了更复杂的优先级变化模式，可能反映了多阶段搜索的特征——前期高置信度，中期震荡，最终收敛或发散。
+
+#### 示例三：CategoryTheory_Equivalence_invFunIdAssoc_hom_app
+
+![CategoryTheory_Equivalence_invFunIdAssoc_hom_app](analysis_output%203/evolution_plots/CategoryTheory_Equivalence_invFunIdAssoc_hom_app.png)
+
+范畴论定理通常具有更高的抽象性。此曲线可能展现了模型在抽象代数结构上的搜索特性，值得对比分析。
+
+完整的每定理演变数据集存储于 `evolution_plots/` 目录，可用于细粒度的定理困难度分析、定理簇识别，以及跨域知识转移的实证研究。
 
 ---
 
@@ -335,14 +355,3 @@ python search_analysis_master.py \
 
 ---
 
-## Project Vibe
-
-这个项目不是只看一个 pass@1 数字。  
-我们更关心：模型为什么成功、为什么失败、失败时到底是在“知识断层”还是“搜索瞎撞”。  
-如果你拿这个仓库做实验，建议每次都保留：
-
-- 同一批数据
-- 同一搜索策略
-- 只改一个变量（模型或解码参数）
-
-这样结论会干净很多，也更容易写进论文。
