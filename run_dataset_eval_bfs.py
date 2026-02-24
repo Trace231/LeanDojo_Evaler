@@ -150,14 +150,21 @@ def _repair_repo_cache_layout(repo) -> bool:
         print(f"[cache-fix] replaced symlink with real dir copy: {with_deps}")
         return True
 
-    # If _d path already exists as a real directory, leave it unchanged.
-    if with_deps.exists():
-        return False
+    repaired = False
 
-    # Create a real directory copy instead of symlink to avoid subpath checks failing.
-    shutil.copytree(normal, with_deps)
-    print(f"[cache-fix] copied dir: {normal} -> {with_deps}")
-    return True
+    # Forward fill: create _d from normal.
+    if normal.exists() and not with_deps.exists():
+        shutil.copytree(normal, with_deps)
+        print(f"[cache-fix] copied dir: {normal} -> {with_deps}")
+        repaired = True
+
+    # Backward fill: recreate normal from _d if normal disappeared.
+    if with_deps.exists() and not normal.exists():
+        shutil.copytree(with_deps, normal)
+        print(f"[cache-fix] restored dir: {with_deps} -> {normal}")
+        repaired = True
+
+    return repaired
 
 
 def _import_site_package(pkg_name: str):
@@ -768,9 +775,17 @@ def main() -> None:
     prover = BestFirstSearchProver(**prover_kwargs)
 
     stats = {"proved": 0, "failed": 0, "init_error": 0}
+    checked_cache_layout = set()
     for idx, item in enumerate(dataset, start=1):
         full_name = item["full_name"]
         thm, repo, pos = _build_theorem_like(item, LeanGitRepo, Pos, Theorem)
+        try:
+            key = repo.get_cache_dirname()
+        except Exception:
+            key = None
+        if key is not None and key not in checked_cache_layout:
+            _repair_repo_cache_layout(repo)
+            checked_cache_layout.add(key)
 
         repaired_and_retried = False
         try:
